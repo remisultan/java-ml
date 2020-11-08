@@ -1,7 +1,6 @@
 package org.regression;
 
 import org.apache.commons.math3.distribution.TDistribution;
-import org.apache.commons.math3.stat.inference.TTest;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.inverse.InvertMatrix;
@@ -10,19 +9,15 @@ import org.utils.Matrices;
 
 import java.util.stream.DoubleStream;
 
-import static org.apache.commons.lang3.ArrayUtils.toPrimitive;
-
 public class LinearRegression implements Regression {
 
     private INDArray BETA;
-    private INDArray E;
     private Double R2;
     private INDArray SSR;
     private INDArray SStot;
-    private INDArray MSE;
-    private INDArray RMSE;
+    private double MSE;
+    private double RMSE;
     private INDArray XtXi;
-    private INDArray varianceMatrix;
     private INDArray SE;
     private INDArray tValues;
     private INDArray pValues;
@@ -30,26 +25,26 @@ public class LinearRegression implements Regression {
     @Override
     public LinearRegression train(INDArray X, INDArray Y) {
         this.BETA = computeBeta(X, Y);
-        this.E = Y.sub(X.mmul(BETA));
-        this.SSR = this.E.transpose().mmul(E);
 
-        this.MSE = this.SSR.div(Y.rows());
-        this.RMSE = Transforms.sqrt(this.MSE);
+        var epsilon = Y.sub(X.mmul(BETA));
+        this.SSR = epsilon.transpose().mmul(epsilon);
+
+        this.MSE = this.SSR.div(Y.rows()).getDouble(0,0);
+        this.RMSE = Math.sqrt(this.MSE);
 
         this.SStot = computeSStotal(Y);
         this.R2 = computeRSquare();
 
         double degreesOfFreedom = (double) Y.rows() - (double) BETA.rows();
-        this.varianceMatrix = XtXi.mul(this.SSR.getDouble(0, 0)).div(degreesOfFreedom);
-        this.SE = Transforms.sqrt(Matrices.diagonal(this.varianceMatrix));
-        this.tValues = this.BETA.sub(Matrices.average(BETA)).div(this.SE);
-        var TDistribution = new TDistribution(degreesOfFreedom);
-        this.pValues = Nd4j.create(toPrimitive(
-                DoubleStream.of(this.tValues.toDoubleVector()).boxed()
-                        .map(TDistribution::cumulativeProbability
-                ).toArray(Double[]::new))
-        ,tValues.rows(), 1);
+
+        this.tValues = computeTValues(degreesOfFreedom);
+        this.pValues = computePValues(degreesOfFreedom);
         return this;
+    }
+
+    private INDArray computeTValues(double degreesOfFreedom) {
+        var SE = computeStandardError(degreesOfFreedom);
+        return this.BETA.sub(Matrices.average(BETA)).div(SE);
     }
 
     @Override
@@ -57,9 +52,21 @@ public class LinearRegression implements Regression {
         return BETA.mmul(X);
     }
 
+    private INDArray computeStandardError(double degreesOfFreedom) {
+        var varianceMatrix = XtXi.mul(this.SSR.getDouble(0, 0)).div(degreesOfFreedom);
+        return Transforms.sqrt(Matrices.diagonal(varianceMatrix));
+    }
+
+    private INDArray computePValues(double degreesOfFreedom) {
+        var tDist = new TDistribution(degreesOfFreedom);
+        double[] tValues = this.tValues.toDoubleVector();
+        double[] pValues = DoubleStream.of(tValues).map(tDist::cumulativeProbability).toArray();
+        return Nd4j.create(pValues, this.tValues.rows(), 1);
+    }
+
     private Double computeRSquare() {
-        var value = SSR.div(this.SStot);
-        return 1 - value.getDouble(0, 0);
+        var rSquare = SSR.div(this.SStot);
+        return 1 - rSquare.getDouble(0, 0);
     }
 
     private INDArray computeSStotal(INDArray Y) {
@@ -84,11 +91,11 @@ public class LinearRegression implements Regression {
         return R2;
     }
 
-    public INDArray getMSE() {
+    public double getMSE() {
         return MSE;
     }
 
-    public INDArray getRMSE() {
+    public double getRMSE() {
         return RMSE;
     }
 
