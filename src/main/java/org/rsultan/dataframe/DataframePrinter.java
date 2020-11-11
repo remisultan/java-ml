@@ -1,5 +1,7 @@
 package org.rsultan.dataframe;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -20,12 +22,9 @@ public class DataframePrinter {
         this.data = data;
         mapMaxSizes = this.data.keySet().stream()
                 .map(key -> Map.entry(key, key.length()))
-                .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+                .collect(toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
 
-        mapIndices = mapMaxSizes.entrySet()
-                .stream().sorted(comparingByKey())
-                .map(Map.Entry::getKey)
-                .collect(toList());
+        mapIndices = new ArrayList<>(mapMaxSizes.keySet());
     }
 
     public static DataframePrinter create(Map<String, List<?>> data) {
@@ -42,7 +41,6 @@ public class DataframePrinter {
     private List<List<String>> buildRows(int number) {
         return range(0, number).boxed().map(num ->
                 data.entrySet().stream()
-                        .sorted(comparingByKey())
                         .map(entry -> Map.entry(entry.getKey(), entry.getValue().get(num)))
                         .map(entry -> {
                             var strValue = String.valueOf(entry.getValue());

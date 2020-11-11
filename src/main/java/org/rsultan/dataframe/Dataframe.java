@@ -1,32 +1,48 @@
 package org.rsultan.dataframe;
 
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.factory.Nd4j;
+
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
+import static java.lang.Double.parseDouble;
+import static java.util.stream.Collectors.*;
 
 public final class Dataframe {
 
     private final Map<String, List<?>> data;
     private final Column[] columns;
+    private final int size;
 
     private Dataframe(Column[] columns) {
         this.columns = columns;
-        this.data = Arrays.stream(columns).collect(toMap(Column::columnName, Column::values));
-        long sizes = this.data.values().stream().map(List::size).distinct().count();
-        if (sizes > 1) {
+        this.data = Arrays.stream(columns).collect(toMap(Column::columnName, Column::values, (e1, e2) -> e1, LinkedHashMap::new));
+        var sizes = this.data.values().stream().map(List::size).distinct().collect(toList());
+        if (sizes.size() > 1) {
             throw new IllegalArgumentException("Dataframe column values should have the same size");
         }
+        this.size = sizes.get(0);
     }
 
     public static Dataframe create(Column... columns) {
         return new Dataframe(columns);
+    }
+
+    public <T> Dataframe withColumn(String columnName, Supplier<T> supplier) {
+        var values = IntStream.range(0, size).boxed().map(num -> supplier.get()).collect(toList());
+        var newColumn = new Column[]{new Column(columnName, values)};
+
+        return Dataframe.create(
+                Stream.of(columns, newColumn).flatMap(Arrays::stream).toArray(Column[]::new)
+        );
     }
 
     public <SOURCE, TARGET> Dataframe withColumn(String columnName, String sourceColumn, Function<SOURCE, TARGET> transform) {
@@ -34,7 +50,7 @@ public final class Dataframe {
         var newColumn = new Column[]{new Column(columnName, values.stream().map(transform).collect(toList()))};
 
         return Dataframe.create(
-                Stream.of(newColumn, columns).flatMap(Arrays::stream).toArray(Column[]::new)
+                Stream.of(columns, newColumn).flatMap(Arrays::stream).toArray(Column[]::new)
         );
     }
 
@@ -51,8 +67,22 @@ public final class Dataframe {
                 .collect(toList());
         var newColumn = new Column[]{new Column(columnName, targetValues)};
         return Dataframe.create(
-                Stream.of(newColumn, columns).flatMap(Arrays::stream).toArray(Column[]::new)
+                Stream.of(columns, newColumn).flatMap(Arrays::stream).toArray(Column[]::new)
         );
+    }
+
+    public INDArray toVector(String columnName) {
+        double[] doubles = this.data.get(columnName).stream().mapToDouble(obj -> parseDouble(obj.toString())).toArray();
+        return Nd4j.create(doubles, doubles.length, 1);
+    }
+
+    public INDArray toMatrix(String... columnNames) {
+        var vectorList = Stream.of(columnNames).sorted()
+                .map(this.data::get)
+                .map(List::stream)
+                .map(stream -> stream.mapToDouble(obj -> parseDouble(obj.toString())).toArray())
+                .map(doubles -> Nd4j.create(doubles, doubles.length, 1)).toArray(INDArray[]::new);
+        return Nd4j.concat(1, vectorList);
     }
 
     public void show(int number) {
