@@ -1,11 +1,11 @@
-package org.regression;
+package org.rsultan.regression;
 
 import org.apache.commons.math3.distribution.TDistribution;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.inverse.InvertMatrix;
 import org.nd4j.linalg.ops.transforms.Transforms;
-import org.utils.Matrices;
+import org.rsultan.utils.Matrices;
 
 import java.util.stream.DoubleStream;
 

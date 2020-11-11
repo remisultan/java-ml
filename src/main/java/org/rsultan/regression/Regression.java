@@ -1,4 +1,4 @@
-package org.regression;
+package org.rsultan.regression;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
 
