@@ -1,10 +1,10 @@
 package org.rsultan.regression;
 
-import org.nd4j.linalg.api.ndarray.INDArray;
+import org.rsultan.dataframe.Dataframe;
 
 public interface Regression {
 
-    Regression train(INDArray X, INDArray Y);
+    Regression train(Dataframe dataframe);
 
-    INDArray predict(INDArray X);
+    Dataframe predict(Dataframe dataframe);
 }

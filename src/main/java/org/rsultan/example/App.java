@@ -26,21 +26,23 @@ public class App {
 
         var yList = range(0, size)
                 .asDoubleStream()
-                .map(num -> Math.pow(num, 2) + nextDouble(0, 1000) * (nextBoolean() ? 1 : -1))
+                .map(num -> Math.pow(num, 2) + nextDouble(0, 1) * (nextBoolean() ? 1 : -1))
                 .boxed().collect(toList());
 
         var xList = range(0, size).asDoubleStream().boxed().collect(toList());
 
-        var dataFrame = Dataframe
+        var dataframe = Dataframe
                 .create(new Column("Y", yList), new Column("x", xList))
                 .withColumn("Intercept", () -> 1)
                 .withColumn("x^2", "x", (Double x) -> x * x);
 
-        dataFrame.show(size);
-        var X = dataFrame.toMatrix("Intercept", "x", "x^2");
-        var Y = dataFrame.toVector("Y");
+        dataframe.show(size);
 
-        var regression = new LinearRegression().train(X, Y).showMetrics();
+        var regression = new LinearRegression()
+                .setResponseVariableName("Y")
+                .setPredictorNames("Intercept","x", "x^2")
+                .train(dataframe)
+                .showMetrics();
 
     }
 }

@@ -9,10 +9,8 @@ import org.rsultan.dataframe.Dataframe;
 import org.rsultan.dataframe.Dataframe.Column;
 import org.rsultan.utils.Matrices;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.DoubleStream;
-import java.util.stream.Stream;
 
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
@@ -28,8 +26,10 @@ public class LinearRegression implements Regression {
     private INDArray XtXi;
     private INDArray tValues;
     private INDArray pValues;
-    private String responseVariableName;
-    private String[] predictorNames;
+
+    private String responseVariableName = "Y";
+    private String[] predictorNames = {};
+    private String predictionColumnName = "predictions";
 
 
     public LinearRegression setResponseVariableName(String name) {
@@ -37,8 +37,8 @@ public class LinearRegression implements Regression {
         return this;
     }
 
-    public LinearRegression setPredictionVariableName(String name) {
-        this.responseVariableName = name;
+    public LinearRegression setPredictionColumnName(String name) {
+        this.predictionColumnName = name;
         return this;
     }
 
@@ -48,7 +48,10 @@ public class LinearRegression implements Regression {
     }
 
     @Override
-    public LinearRegression train(INDArray X, INDArray Y) {
+    public LinearRegression train(Dataframe dataframe) {
+        var X = dataframe.toMatrix(predictorNames);
+        var Y = dataframe.toVector(responseVariableName);
+
         this.BETA = computeBeta(X, Y);
 
         var epsilon = Y.sub(X.mmul(BETA));
@@ -69,8 +72,9 @@ public class LinearRegression implements Regression {
     }
 
     public LinearRegression showMetrics() {
-        System.out.println("Prediction:");
+        System.out.println("\nPrediction:");
         Dataframe.create(
+                new Column("", stream(predictorNames).collect(toList())),
                 new Column("Predictors", stream(BETA.getColumn(0).toDoubleVector()).boxed().collect(toList())),
                 new Column("T-values", stream(tValues.getColumn(0).toDoubleVector()).boxed().collect(toList())),
                 new Column("P-values", stream(pValues.getColumn(0).toDoubleVector()).boxed().collect(toList()))
@@ -86,8 +90,11 @@ public class LinearRegression implements Regression {
     }
 
     @Override
-    public INDArray predict(INDArray X) {
-        return BETA.mmul(X);
+    public Dataframe predict(Dataframe dataframe) {
+        var X = dataframe.toMatrix(this.responseVariableName);
+        var predictions =  stream(BETA.mmul(X).toDoubleVector()).boxed().collect(toList());
+        var predictionColumn = new Column(this.predictionColumnName, predictions);
+        return dataframe.addColumn(predictionColumn);
     }
 
     private INDArray computeTValues(double degreesOfFreedom) {

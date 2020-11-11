@@ -14,7 +14,8 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static java.lang.Double.parseDouble;
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 public final class Dataframe {
 
@@ -36,22 +37,21 @@ public final class Dataframe {
         return new Dataframe(columns);
     }
 
-    public <T> Dataframe withColumn(String columnName, Supplier<T> supplier) {
-        var values = IntStream.range(0, size).boxed().map(num -> supplier.get()).collect(toList());
-        var newColumn = new Column[]{new Column(columnName, values)};
-
+    public Dataframe addColumn(Column column) {
+        var newColumn = new Column[]{column};
         return Dataframe.create(
                 Stream.of(columns, newColumn).flatMap(Arrays::stream).toArray(Column[]::new)
         );
     }
 
-    public <SOURCE, TARGET> Dataframe withColumn(String columnName, String sourceColumn, Function<SOURCE, TARGET> transform) {
-        var values = (List<SOURCE>) this.data.get(sourceColumn);
-        var newColumn = new Column[]{new Column(columnName, values.stream().map(transform).collect(toList()))};
+    public <T> Dataframe withColumn(String columnName, Supplier<T> supplier) {
+        var values = IntStream.range(0, size).boxed().map(num -> supplier.get()).collect(toList());
+        return addColumn(new Column(columnName, values));
+    }
 
-        return Dataframe.create(
-                Stream.of(columns, newColumn).flatMap(Arrays::stream).toArray(Column[]::new)
-        );
+    public <SOURCE, TARGET> Dataframe withColumn(String columnName, String sourceColumn, Function<SOURCE, TARGET> transform) {
+        var values= (List<SOURCE>) this.data.get(sourceColumn);
+        return addColumn(new Column(columnName, values.stream().map(transform).collect(toList())));
     }
 
     public <SOURCE1, SOURCE2, TARGET> Dataframe withColumn(

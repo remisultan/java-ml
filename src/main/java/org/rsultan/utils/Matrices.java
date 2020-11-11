@@ -6,7 +6,8 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.inverse.InvertMatrix;
 
 import java.util.Arrays;
-import java.util.stream.IntStream;
+
+import static java.util.stream.IntStream.range;
 
 public class Matrices {
 
@@ -19,11 +20,8 @@ public class Matrices {
 
     public static INDArray diagonal(INDArray m) {
         if (m.isSquare()) {
-            var diagonal = IntStream.range(0, m.rows()).boxed()
-                    .map(integer -> m.getDouble(integer, integer))
-                    .toArray(Double[]::new);
-            return Nd4j.create(ArrayUtils.toPrimitive(diagonal), m.rows(), 1);
-
+            var diagonal = range(0, m.rows()).mapToDouble(integer -> m.getDouble(integer, integer)).toArray();
+            return Nd4j.create(diagonal, m.rows(), 1);
         }
         throw new IllegalArgumentException("Matrix is not a square matrix, shape: " + Arrays
                 .toString(m.shape()));
