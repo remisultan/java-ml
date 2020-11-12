@@ -78,16 +78,16 @@ public class LinearRegression implements Regression {
     public LinearRegression showMetrics() {
         System.out.println("\nPrediction:");
         Dataframe.create(
-                new Column("", stream(predictorNames).collect(toList())),
-                new Column("Predictors", stream(BETA.getColumn(0).toDoubleVector()).boxed().collect(toList())),
-                new Column("T-values", stream(tValues.getColumn(0).toDoubleVector()).boxed().collect(toList())),
-                new Column("P-values", stream(pValues.getColumn(0).toDoubleVector()).boxed().collect(toList()))
+                new Column<>("", stream(predictorNames).collect(toList())),
+                new Column<>("Predictors", stream(BETA.getColumn(0).toDoubleVector()).boxed().collect(toList())),
+                new Column<>("T-values", stream(tValues.getColumn(0).toDoubleVector()).boxed().collect(toList())),
+                new Column<>("P-values", stream(pValues.getColumn(0).toDoubleVector()).boxed().collect(toList()))
         ).show(BETA.rows());
         System.out.print("\n");
         Dataframe.create(
-                new Column("MSE", List.of(MSE)),
-                new Column("RMSE", List.of(RMSE)),
-                new Column("R2", List.of(R2))
+                new Column<>("MSE", List.of(MSE)),
+                new Column<>("RMSE", List.of(RMSE)),
+                new Column<>("R2", List.of(R2))
         ).show(1);
 
         return this;
@@ -103,7 +103,7 @@ public class LinearRegression implements Regression {
 
     private INDArray computeTValues(double degreesOfFreedom) {
         var SE = computeStandardError(degreesOfFreedom);
-        return this.BETA.sub(Matrices.average(BETA)).div(SE);
+        return this.BETA.div(SE);
     }
 
     private INDArray computeStandardError(double degreesOfFreedom) {
@@ -124,7 +124,7 @@ public class LinearRegression implements Regression {
     }
 
     private INDArray computeSStotal(INDArray Y) {
-        var YMean = Matrices.average(Y);
+        var YMean = Matrices.vectorAverage(Y);
         var yDemeaned = Y.sub(YMean);
         return yDemeaned.transpose().mmul(yDemeaned);
     }
