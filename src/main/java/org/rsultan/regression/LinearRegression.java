@@ -6,7 +6,8 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.inverse.InvertMatrix;
 import org.nd4j.linalg.ops.transforms.Transforms;
 import org.rsultan.dataframe.Dataframe;
-import org.rsultan.dataframe.Dataframe.Column;
+import org.rsultan.dataframe.Column;
+import org.rsultan.dataframe.Dataframes;
 import org.rsultan.utils.Matrices;
 
 import java.util.Arrays;
@@ -77,14 +78,14 @@ public class LinearRegression implements Regression {
 
     public LinearRegression showMetrics() {
         System.out.println("\nPrediction:");
-        Dataframe.create(
+        Dataframes.create(
                 new Column<>("", stream(predictorNames).collect(toList())),
                 new Column<>("Predictors", stream(BETA.getColumn(0).toDoubleVector()).boxed().collect(toList())),
                 new Column<>("T-values", stream(tValues.getColumn(0).toDoubleVector()).boxed().collect(toList())),
                 new Column<>("P-values", stream(pValues.getColumn(0).toDoubleVector()).boxed().collect(toList()))
         ).show(BETA.rows());
         System.out.print("\n");
-        Dataframe.create(
+        Dataframes.create(
                 new Column<>("MSE", List.of(MSE)),
                 new Column<>("RMSE", List.of(RMSE)),
                 new Column<>("R2", List.of(R2))

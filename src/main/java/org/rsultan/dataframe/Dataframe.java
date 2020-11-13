@@ -2,10 +2,8 @@ package org.rsultan.dataframe;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
+import org.rsultan.dataframe.printer.DataframePrinter;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -16,20 +14,17 @@ import java.util.stream.Stream;
 
 import static java.lang.Double.parseDouble;
 import static java.util.Arrays.stream;
-import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.IntStream.range;
 
-public final class Dataframe {
+public class Dataframe {
 
-    public static final Pattern DOUBLE_VALUE_REGEX = Pattern.compile("\\d+\\.\\d+");
-    public static final Pattern LONG_VALUE_REGEX = Pattern.compile("\\d+");
-    private final Map<String, List<?>> data;
-    private final Column<?>[] columns;
-    private final int size;
+    protected final Map<String, List<?>> data;
+    protected final Column<?>[] columns;
+    protected final int size;
 
-    private Dataframe(Column<?>[] columns) {
+    public Dataframe(Column<?>[] columns) {
         this.columns = columns;
         this.data = stream(columns).collect(toMap(Column::columnName, Column::values, (e1, e2) -> e1, LinkedHashMap::new));
         var sizes = this.data.values().stream().map(List::size).distinct().collect(toList());
@@ -39,41 +34,9 @@ public final class Dataframe {
         this.size = sizes.get(0);
     }
 
-    public static Dataframe create(Column<?>... columns) {
-        return new Dataframe(columns);
-    }
-
-    public static Dataframe csv(String fileName, String separator, boolean withHeader) throws IOException {
-        var path = Paths.get(fileName);
-        var reader = Files.newBufferedReader(path);
-        var firstLine = reader.readLine().split(separator);
-        var columns = range(0, firstLine.length)
-                .boxed().map(index -> withHeader ?
-                        new Column<>(firstLine[index], new ArrayList<>()) :
-                        new Column<>("c".concat(index.toString()), new ArrayList<>(singletonList((getValueWithType(firstLine[index])))))
-                ).toArray(Column[]::new);
-        reader.lines()
-                .map(line -> line.split(separator))
-                .forEach(lineArray ->
-                        range(0, lineArray.length)
-                                .forEach(index -> columns[index].values.add(getValueWithType(lineArray[index])))
-                );
-        reader.close();
-        return new Dataframe(columns);
-    }
-
-    private static Object getValueWithType(String value) {
-        if (DOUBLE_VALUE_REGEX.matcher(value).matches()) {
-            return Double.parseDouble(value);
-        } else if (LONG_VALUE_REGEX.matcher(value).matches()) {
-            return Long.valueOf(value);
-        }
-        return value;
-    }
-
     public <T> Dataframe addColumn(Column<T> column) {
         var newColumn = new Column[]{column};
-        return Dataframe.create(
+        return Dataframes.create(
                 Stream.of(columns, newColumn).flatMap(Arrays::stream).toArray(Column[]::new)
         );
     }
@@ -100,7 +63,7 @@ public final class Dataframe {
                 .map(index -> transform.apply(values1.get(index), values2.get(index)))
                 .collect(toList());
         var newColumn = new Column[]{new Column<>(columnName, targetValues)};
-        return Dataframe.create(
+        return Dataframes.create(
                 Stream.of(columns, newColumn).flatMap(Arrays::stream).toArray(Column[]::new)
         );
     }
@@ -125,8 +88,6 @@ public final class Dataframe {
         DataframePrinter.create(data).print(number);
     }
 
-    public static record Column<T>(String columnName, List<T> values) {
-    }
 }
 
 

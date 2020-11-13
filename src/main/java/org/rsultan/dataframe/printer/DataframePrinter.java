@@ -1,4 +1,4 @@
-package org.rsultan.dataframe;
+package org.rsultan.dataframe.printer;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
