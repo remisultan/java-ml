@@ -4,11 +4,13 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.rsultan.dataframe.printer.DataframePrinter;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
 import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
@@ -74,18 +76,19 @@ public class Dataframe {
     }
 
     public INDArray toMatrix(String... columnNames) {
-        var vectorList = Stream.of(columnNames).sorted()
-                .map(this.data::get)
+        var vectorList = Stream.of(columnNames)
+                .map(col -> this.data.get(col))
                 .map(List::stream)
                 .map(stream -> stream.map(Object::toString)
-                        .mapToDouble(str -> str.isEmpty() ? 0D : parseDouble(str))
+                        .mapToDouble(str -> str == null || str.isEmpty() ? 0D : parseDouble(str))
                 ).map(DoubleStream::toArray)
-                .map(doubles -> Nd4j.create(doubles, doubles.length, 1)).toArray(INDArray[]::new);
+                .map(doubles -> Nd4j.create(doubles, doubles.length, 1))
+                .toArray(INDArray[]::new);
         return Nd4j.concat(1, vectorList);
     }
 
     public void show(int number) {
-        DataframePrinter.create(data).print(number);
+        DataframePrinter.create(data).print(Math.min(number, this.size));
     }
 
 }

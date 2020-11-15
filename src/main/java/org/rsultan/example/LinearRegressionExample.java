@@ -14,12 +14,21 @@ public class LinearRegressionExample {
     }
 
     public static void main(String[] args) throws IOException {
-        var dataframe = Dataframes.csv(args[0]);
-        dataframe.show(20);
-        new LinearRegression()
+        var df = Dataframes.csv(args[0]);
+        var testDf = Dataframes.csv(args[1]);
+        df.show(20);
+        testDf.show(20);
+
+        var linearRegression = new LinearRegression()
                 .setResponseVariableName("fare_amount")
-                .setPredictorNames("pickup_longitude", "pickup_latitude", "dropoff_longitude", "dropoff_latitude", "passenger_count")
-                .train(dataframe)
+                .setPredictorNames("pickup_longitude",
+                        "pickup_latitude",
+                        "dropoff_longitude",
+                        "dropoff_latitude",
+                        "passenger_count")
+                .train(df)
                 .showMetrics();
+
+        linearRegression.predict(testDf).show(20);
     }
 }

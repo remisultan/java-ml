@@ -96,9 +96,10 @@ public class LinearRegression implements Regression {
 
     @Override
     public Dataframe predict(Dataframe dataframe) {
-        var X = dataframe.toMatrix(this.responseVariableName);
-        var predictions = stream(BETA.mmul(X).toDoubleVector()).boxed().collect(toList());
-        var predictionColumn = new Column(this.predictionColumnName, predictions);
+        var dataframeIntercept = dataframe.withColumn(INTERCEPT, () -> 1);
+        var X = dataframeIntercept.toMatrix(this.predictorNames);
+        var predictions = stream(X.mmul(BETA).toDoubleVector()).boxed().collect(toList());
+        var predictionColumn = new Column<>(this.predictionColumnName, predictions);
         return dataframe.addColumn(predictionColumn);
     }
 
