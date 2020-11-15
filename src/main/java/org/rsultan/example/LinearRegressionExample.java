@@ -9,6 +9,11 @@ import java.io.IOException;
 
 public class LinearRegressionExample {
 
+    /*
+        The data used is a sample of https://www.kaggle.com/c/new-york-city-taxi-fare-prediction/data
+        Make sure args[0] /path/to/your/src/main/resources/linear/train.csv and
+        Also that args[1] /path/to/your/src/main/resources/linear/test.csv
+     */
     static {
         Nd4j.setDefaultDataTypes(DataType.DOUBLE, DataType.DOUBLE);
     }
