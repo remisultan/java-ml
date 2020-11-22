@@ -16,6 +16,7 @@ public class CSVUtils {
 
     private static final Pattern DOUBLE_VALUE_REGEX = Pattern.compile("\\d+\\.\\d+");
     private static final Pattern LONG_VALUE_REGEX = Pattern.compile("\\d+");
+    public static final String HEADER_PREFIX = "c";
 
     private static Object getValueWithType(String value) {
         if (DOUBLE_VALUE_REGEX.matcher(value).matches()) {
@@ -35,7 +36,7 @@ public class CSVUtils {
                 .map(buildColumnHeaderName(withHeader, firstLine))
                 .toArray(Column[]::new);
         reader.lines().map(line -> line.split(separator)).forEach(lineArray ->
-                range(0, lineArray.length).forEach(index -> {
+                range(0, firstLine.length).forEach(index -> {
                     var typedValue = getValueWithType(lineArray[index]);
                     columns[index].values().add(typedValue);
                 }));
@@ -48,7 +49,7 @@ public class CSVUtils {
             var firstLineCell = firstLine[index];
             return withHeader ?
                     new Column<>(firstLineCell, new ArrayList<>()) :
-                    new Column<>("c".concat(index.toString()), new ArrayList<>(singletonList((getValueWithType(firstLineCell)))));
+                    new Column<>(HEADER_PREFIX.concat(index.toString()), new ArrayList<>(singletonList((getValueWithType(firstLineCell)))));
         };
     }
 }
