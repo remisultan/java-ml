@@ -4,7 +4,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.rsultan.utils.CSVUtilsTest;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -38,6 +41,11 @@ public class DataframeTest {
                 of(new Column[]{new Column<>(null, 0, 2, 3, 4)}, NullPointerException.class),
                 of(new Column<?>[]{new Column<>("c1", 1, 2), new Column<>("c2", 1, 2, 3)}, IllegalArgumentException.class)
         );
+    }
+
+    public static String getResourceFileName(String resourcePath) {
+        var classLoader = CSVUtilsTest.class.getClassLoader();
+        return new File(classLoader.getResource(resourcePath).getFile()).toString();
     }
 
     @Test
@@ -103,5 +111,25 @@ public class DataframeTest {
         df = df.withColumn("square", (Double d1, Double d2) -> d1 * d2, "d1", "d2");
 
         assertThat(df.get("square")).containsExactly(1.0D, 4.0D, 9.0D, 16.0D, 25.0D);
+    }
+
+    @Test
+    public void must_load_dataframe_from_csv() throws IOException {
+        var df = Dataframes.csv(getResourceFileName("org/rsultan/utils/example.csv"));
+        assertThat(df.get("y")).containsExactly(1L, 2L, 3L, 4L);
+        assertThat(df.get("x")).containsExactly(1.0D, 2.0D, 3.0D, 4.0D);
+        assertThat(df.get("x2")).containsExactly(1L, 4L, 9L, 16L);
+        assertThat(df.get("x3")).containsExactly(1L, 8L, 27L, 64L);
+        assertThat(df.get("strColumn")).containsExactly("a", "b", "c", "d");
+    }
+
+    @Test
+    public void must_load_dataframe_from_csv_with_no_header() throws IOException {
+        var df = Dataframes.csv(getResourceFileName("org/rsultan/utils/example_no_header.csv"), ",", false);
+        assertThat(df.get("c0")).containsExactly(1L, 2L, 3L, 4L);
+        assertThat(df.get("c1")).containsExactly(1.0D, 2.0D, 3.0D, 4.0D);
+        assertThat(df.get("c2")).containsExactly(1L, 4L, 9L, 16L);
+        assertThat(df.get("c3")).containsExactly(1L, 8L, 27L, 64L);
+        assertThat(df.get("c4")).containsExactly("a", "b", "c", "d");
     }
 }

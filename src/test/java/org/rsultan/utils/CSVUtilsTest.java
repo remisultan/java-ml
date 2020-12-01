@@ -17,7 +17,7 @@ import static org.junit.jupiter.params.provider.Arguments.of;
 
 public class CSVUtilsTest {
 
-    public static final String MALFORME_EXAMPLED_CSV = "org/rsultan/utils/malformed_example.csv";
+    public static final String MALFORMED_EXAMPLED_CSV = "org/rsultan/utils/malformed_example.csv";
     public static final String EXAMPLE_CSV = "org/rsultan/utils/example.csv";
     public static final String EXAMPLE_CSV_NO_HEADER = "org/rsultan/utils/example_no_header.csv";
 
@@ -33,7 +33,7 @@ public class CSVUtilsTest {
                 of(UUID.randomUUID().toString(), null, false, IOException.class),
                 of(UUID.randomUUID().toString(), null, true, IOException.class),
                 of(getResourceFileName("org/rsultan/utils/malformed_example.csv"), null, false, NullPointerException.class),
-                of(getResourceFileName(MALFORME_EXAMPLED_CSV), ",", false, ArrayIndexOutOfBoundsException.class)
+                of(getResourceFileName(MALFORMED_EXAMPLED_CSV), ",", false, ArrayIndexOutOfBoundsException.class)
         );
     }
 
@@ -57,7 +57,7 @@ public class CSVUtilsTest {
         assertThat(columns[1].columnName()).isEqualTo("x");
         assertThat((List<Double>) columns[1].values()).hasSize(4).containsExactly(1.0D, 2.0D, 3.0D, 4.0D);
         assertThat(columns[2].columnName()).isEqualTo("x2");
-        assertThat((List<Long>) columns[2].values()).hasSize(4).containsExactly(1L, 4L, 8L, 16L);
+        assertThat((List<Long>) columns[2].values()).hasSize(4).containsExactly(1L, 4L, 9L, 16L);
         assertThat(columns[3].columnName()).isEqualTo("x3");
         assertThat((List<Long>) columns[3].values()).hasSize(4).containsExactly(1L, 8L, 27L, 64L);
         assertThat(columns[4].columnName()).isEqualTo("strColumn");
@@ -76,7 +76,7 @@ public class CSVUtilsTest {
         assertThat(columns[1].columnName()).isEqualTo("c1");
         assertThat((List<Double>) columns[1].values()).hasSize(4).containsExactly(1.0D, 2.0D, 3.0D, 4.0D);
         assertThat(columns[2].columnName()).isEqualTo("c2");
-        assertThat((List<Long>) columns[2].values()).hasSize(4).containsExactly(1L, 4L, 8L, 16L);
+        assertThat((List<Long>) columns[2].values()).hasSize(4).containsExactly(1L, 4L, 9L, 16L);
         assertThat(columns[3].columnName()).isEqualTo("c3");
         assertThat((List<Long>) columns[3].values()).hasSize(4).containsExactly(1L, 8L, 27L, 64L);
         assertThat(columns[4].columnName()).isEqualTo("c4");
