@@ -10,14 +10,10 @@ import static java.util.stream.IntStream.range;
 
 public class Matrices {
 
-    public static INDArray matrixAverage(INDArray m) {
-        var O = Nd4j.ones(m.shape());
-        var OtO = O.transpose().mmul(O);
-        var OtOi = InvertMatrix.invert(OtO, false);
-        return O.mmul(OtOi).mmul(O.transpose()).mmul(m);
-    }
-
     public static INDArray vectorAverage(INDArray m) {
+        if(m.columns() > 1){
+            throw new IllegalArgumentException("Vector must have 1 column");
+        }
         double average = m.sumNumber().doubleValue() / (double) m.rows();
         double[] data = range(0, m.rows()).mapToDouble(num -> average).toArray();
         return Nd4j.create(data, m.shape());
