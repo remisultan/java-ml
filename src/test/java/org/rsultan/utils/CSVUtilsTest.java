@@ -53,15 +53,15 @@ public class CSVUtilsTest {
         assertThat(columns).hasSize(5);
 
         assertThat(columns[0].columnName()).isEqualTo("y");
-        assertThat((List<Long>) columns[0].values()).hasSize(4).containsExactly(1L, 2L, 3L, 4L);
+        assertThat((List<Long>) columns[0].values()).hasSize(5).containsExactly(1L, 2L, 3L, 4L, 5L);
         assertThat(columns[1].columnName()).isEqualTo("x");
-        assertThat((List<Double>) columns[1].values()).hasSize(4).containsExactly(1.0D, 2.0D, 3.0D, 4.0D);
+        assertThat((List<Double>) columns[1].values()).hasSize(5).containsExactly(1.0D, 2.0D, 3.0D, 4.0D, 5.0D);
         assertThat(columns[2].columnName()).isEqualTo("x2");
-        assertThat((List<Long>) columns[2].values()).hasSize(4).containsExactly(1L, 4L, 9L, 16L);
+        assertThat((List<Long>) columns[2].values()).hasSize(5).containsExactly(1L, 4L, 9L, 16L, 25L);
         assertThat(columns[3].columnName()).isEqualTo("x3");
-        assertThat((List<Long>) columns[3].values()).hasSize(4).containsExactly(1L, 8L, 27L, 64L);
+        assertThat((List<Long>) columns[3].values()).hasSize(5).containsExactly(1L, 8L, 27L, 64L, 125L);
         assertThat(columns[4].columnName()).isEqualTo("strColumn");
-        assertThat((List<String>) columns[4].values()).hasSize(4).containsExactly("a", "b", "c", "d");
+        assertThat((List<String>) columns[4].values()).hasSize(5).containsExactly("a", "b", "c", "d", "e");
 
     }
 
@@ -72,14 +72,14 @@ public class CSVUtilsTest {
         assertThat(columns).hasSize(5);
 
         assertThat(columns[0].columnName()).isEqualTo("c0");
-        assertThat((List<Long>) columns[0].values()).hasSize(4).containsExactly(1L, 2L, 3L, 4L);
+        assertThat((List<Long>) columns[0].values()).hasSize(5).containsExactly(1L, 2L, 3L, 4L, 5L);
         assertThat(columns[1].columnName()).isEqualTo("c1");
-        assertThat((List<Double>) columns[1].values()).hasSize(4).containsExactly(1.0D, 2.0D, 3.0D, 4.0D);
+        assertThat((List<Double>) columns[1].values()).hasSize(5).containsExactly(1.0D, 2.0D, 3.0D, 4.0D, 5.0D);
         assertThat(columns[2].columnName()).isEqualTo("c2");
-        assertThat((List<Long>) columns[2].values()).hasSize(4).containsExactly(1L, 4L, 9L, 16L);
+        assertThat((List<Long>) columns[2].values()).hasSize(5).containsExactly(1L, 4L, 9L, 16L, 25L);
         assertThat(columns[3].columnName()).isEqualTo("c3");
-        assertThat((List<Long>) columns[3].values()).hasSize(4).containsExactly(1L, 8L, 27L, 64L);
+        assertThat((List<Long>) columns[3].values()).hasSize(5).containsExactly(1L, 8L, 27L, 64L, 125L);
         assertThat(columns[4].columnName()).isEqualTo("c4");
-        assertThat((List<String>) columns[4].values()).hasSize(4).containsExactly("a", "b", "c", "d");
+        assertThat((List<String>) columns[4].values()).hasSize(5).containsExactly("a", "b", "c", "d", "e");
     }
 }

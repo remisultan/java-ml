@@ -116,20 +116,20 @@ public class DataframeTest {
     @Test
     public void must_load_dataframe_from_csv() throws IOException {
         var df = Dataframes.csv(getResourceFileName("org/rsultan/utils/example.csv"));
-        assertThat(df.get("y")).containsExactly(1L, 2L, 3L, 4L);
-        assertThat(df.get("x")).containsExactly(1.0D, 2.0D, 3.0D, 4.0D);
-        assertThat(df.get("x2")).containsExactly(1L, 4L, 9L, 16L);
-        assertThat(df.get("x3")).containsExactly(1L, 8L, 27L, 64L);
-        assertThat(df.get("strColumn")).containsExactly("a", "b", "c", "d");
+        assertThat(df.get("y")).containsExactly(1L, 2L, 3L, 4L, 5L);
+        assertThat(df.get("x")).containsExactly(1.0D, 2.0D, 3.0D, 4.0D, 5.0D);
+        assertThat(df.get("x2")).containsExactly(1L, 4L, 9L, 16L, 25L);
+        assertThat(df.get("x3")).containsExactly(1L, 8L, 27L, 64L, 125L);
+        assertThat(df.get("strColumn")).containsExactly("a", "b", "c", "d", "e");
     }
 
     @Test
     public void must_load_dataframe_from_csv_with_no_header() throws IOException {
         var df = Dataframes.csv(getResourceFileName("org/rsultan/utils/example_no_header.csv"), ",", false);
-        assertThat(df.get("c0")).containsExactly(1L, 2L, 3L, 4L);
-        assertThat(df.get("c1")).containsExactly(1.0D, 2.0D, 3.0D, 4.0D);
-        assertThat(df.get("c2")).containsExactly(1L, 4L, 9L, 16L);
-        assertThat(df.get("c3")).containsExactly(1L, 8L, 27L, 64L);
-        assertThat(df.get("c4")).containsExactly("a", "b", "c", "d");
+        assertThat(df.get("c0")).containsExactly(1L, 2L, 3L, 4L, 5L);
+        assertThat(df.get("c1")).containsExactly(1.0D, 2.0D, 3.0D, 4.0D, 5.0D);
+        assertThat(df.get("c2")).containsExactly(1L, 4L, 9L, 16L, 25L);
+        assertThat(df.get("c3")).containsExactly(1L, 8L, 27L, 64L, 125L);
+        assertThat(df.get("c4")).containsExactly("a", "b", "c", "d", "e");
     }
 }
