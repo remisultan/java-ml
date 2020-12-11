@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 
 import static java.lang.Double.parseDouble;
 import static java.util.Arrays.stream;
-import static java.util.Objects.isNull;
+import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.IntStream.range;
@@ -51,6 +51,27 @@ public class Dataframe {
         return addColumn(new Column<>(columnName, values.stream().map(transform).collect(toList())));
     }
 
+    public Dataframe oneHotEncode(String columnToEncode) {
+        var toEncodeColumnMap = data.get(columnToEncode).stream()
+                .distinct()
+                .map(colName -> new Column<Boolean>(colName.toString(), new ArrayList<>()))
+                .collect(toMap(Column::columnName, c -> c));
+
+        data.get(columnToEncode).stream().map(Object::toString).forEach(colName -> {
+            var trueCol = toEncodeColumnMap.get(colName);
+            trueCol.values().add(true);
+            toEncodeColumnMap.keySet().stream()
+                    .map(toEncodeColumnMap::get)
+                    .filter(not(trueCol::equals))
+                    .forEach(column -> column.values().add(false));
+        });
+
+        var columnArray = toEncodeColumnMap.values().toArray(Column[]::new);
+        return Dataframes.create(
+                Stream.of(this.columns, columnArray).flatMap(Arrays::stream).toArray(Column[]::new)
+        );
+    }
+
     public <SOURCE1, SOURCE2, TARGET> Dataframe withColumn(
             String columnName,
             BiFunction<SOURCE1, SOURCE2, TARGET> transform,
@@ -77,12 +98,21 @@ public class Dataframe {
         var vectorList = Stream.of(columnNames)
                 .map(this::get)
                 .map(List::stream)
-                .map(stream -> stream.map(Object::toString)
-                        .mapToDouble(str -> isNull(str) || str.isEmpty() ? 0D : parseDouble(str))
-                ).map(DoubleStream::toArray)
+                .map(stream -> stream.mapToDouble(this::objectToDouble))
+                .map(DoubleStream::toArray)
                 .map(doubles -> Nd4j.create(doubles, doubles.length, 1))
                 .toArray(INDArray[]::new);
         return Nd4j.concat(1, vectorList);
+    }
+
+    private Double objectToDouble(Object obj) {
+        if (obj instanceof Number number) {
+            return number.doubleValue();
+        } else if (obj instanceof Boolean b) {
+            return b ? 1.0D : 0.0D;
+        } else {
+            return parseDouble(String.valueOf(obj));
+        }
     }
 
     public void show(int number) {
