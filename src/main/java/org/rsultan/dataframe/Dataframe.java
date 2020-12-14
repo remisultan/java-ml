@@ -46,6 +46,13 @@ public class Dataframe {
         return addColumn(new Column<>(columnName, values));
     }
 
+    public <T> Dataframe withoutColumn(String... columnNames) {
+        var colList = List.of(columnNames);
+        return Dataframes.create(
+                stream(columns).filter(column -> !colList.contains(column.columnName())).toArray(Column[]::new)
+        );
+    }
+
     public <SOURCE, TARGET> Dataframe withColumn(String columnName, String sourceColumn, Function<SOURCE, TARGET> transform) {
         List<SOURCE> values = this.get(sourceColumn);
         return addColumn(new Column<>(columnName, values.stream().map(transform).collect(toList())));
@@ -95,10 +102,13 @@ public class Dataframe {
     }
 
     public INDArray toMatrix(String... columnNames) {
-        var vectorList = Stream.of(columnNames)
-                .map(this::get)
+        var colNameStream = columnNames.length == 0 ?
+                stream(this.columns).map(Column::values) :
+                Stream.of(columnNames).map(this::get);
+
+        var vectorList = colNameStream
                 .map(List::stream)
-                .map(stream -> stream.mapToDouble(this::objectToDouble))
+                .map(valueStream -> valueStream.mapToDouble(this::objectToDouble))
                 .map(DoubleStream::toArray)
                 .map(doubles -> Nd4j.create(doubles, doubles.length, 1))
                 .toArray(INDArray[]::new);

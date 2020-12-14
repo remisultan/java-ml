@@ -10,17 +10,14 @@ import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframes;
 import org.rsultan.utils.Matrices;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.DoubleStream;
-import java.util.stream.Stream;
 
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
 
-public class LinearRegression implements Regression {
+public class LinearRegression extends AbstractRegression {
 
-    public static final String INTERCEPT = "Intercept";
     private INDArray BETA;
     private Double R2;
     private INDArray SSR;
@@ -31,23 +28,18 @@ public class LinearRegression implements Regression {
     private INDArray tValues;
     private INDArray pValues;
 
-    private String responseVariableName = "Y";
-    private String[] predictorNames = {};
-    private String predictionColumnName = "predictions";
-
     public LinearRegression setResponseVariableName(String name) {
-        this.responseVariableName = name;
+        super.setResponseVariableName(name);
         return this;
     }
 
     public LinearRegression setPredictionColumnName(String name) {
-        this.predictionColumnName = name;
+        super.setPredictionColumnName(name);
         return this;
     }
 
     public LinearRegression setPredictorNames(String... names) {
-        String[] strings = {INTERCEPT};
-        this.predictorNames = Stream.of(strings, names).flatMap(Arrays::stream).distinct().toArray(String[]::new);
+        super.setPredictorNames(names);
         return this;
     }
 
