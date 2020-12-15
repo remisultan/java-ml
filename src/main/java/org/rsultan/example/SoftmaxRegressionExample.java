@@ -21,15 +21,15 @@ public class SoftmaxRegressionExample {
         var df = Dataframes
                 .create(
                         new Column<>("categories", categories),
-                        new Column<>("x1", categories.stream().map(cat -> RandomUtils.nextDouble(0, 10) ).collect(Collectors.toList())),
+                        new Column<>("x1", categories.stream().map(cat -> RandomUtils.nextDouble(0, 10)).collect(Collectors.toList())),
                         new Column<>("x2", categories.stream().map(cat -> RandomUtils.nextDouble(0, 10)).collect(Collectors.toList())),
                         new Column<>("x3", categories.stream().map(cat -> RandomUtils.nextDouble(0, 10)).collect(Collectors.toList()))
                 );
-        df.show(100);
 
-        var softmax = new SoftmaxRegression(400, 1E-3)
+        new SoftmaxRegression(1, 1E-4)
                 .setResponseVariableName("categories")
                 .setPredictorNames("x1", "x2", "x3")
-                .train(df);
+                .train(df)
+                .predict(df).show(100);
     }
 }

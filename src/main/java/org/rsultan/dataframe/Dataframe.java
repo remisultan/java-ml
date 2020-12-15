@@ -41,12 +41,18 @@ public class Dataframe {
         );
     }
 
+    public <T> Dataframe addColumns(Column<T>... columns) {
+        return Dataframes.create(
+                Stream.of(this.columns, columns).flatMap(Arrays::stream).toArray(Column[]::new)
+        );
+    }
+
     public <T> Dataframe withColumn(String columnName, Supplier<T> supplier) {
         var values = range(0, rows).boxed().map(num -> supplier.get()).collect(toList());
         return addColumn(new Column<>(columnName, values));
     }
 
-    public <T> Dataframe withoutColumn(String... columnNames) {
+    public Dataframe withoutColumn(String... columnNames) {
         var colList = List.of(columnNames);
         return Dataframes.create(
                 stream(columns).filter(column -> !colList.contains(column.columnName())).toArray(Column[]::new)
