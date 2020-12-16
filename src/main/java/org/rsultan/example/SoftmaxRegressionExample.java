@@ -17,7 +17,7 @@ public class SoftmaxRegressionExample {
         var df = Dataframes.csv(args[0]);
         var testDf = Dataframes.csv(args[1]);
 
-        var softmaxRegression = new SoftmaxRegression(10, 0.5)
+        var softmaxRegression = new SoftmaxRegression(100, 0.01)
                 .setResponseVariableName("quality")
                 .setPredictorNames("fixed acidity",
                         "volatile acidity",
@@ -31,6 +31,6 @@ public class SoftmaxRegressionExample {
                         "sulphates",
                         "alcohol"
                 ).train(df);
-        softmaxRegression.getHistory().show(1000);
+        softmaxRegression.getHistory().show(10000);
     }
 }

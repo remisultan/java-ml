@@ -1,7 +1,9 @@
 package org.rsultan.regression;
 
+import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.indexing.NDArrayIndex;
 import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframe;
 import org.rsultan.dataframe.Dataframes;
@@ -64,6 +66,7 @@ public class SoftmaxRegression extends AbstractRegression {
         var YoneHot = dataframe.oneHotEncode(responseVariableName)
                 .withoutColumn(responseVariableName)
                 .withoutColumn(predictorNames).toMatrix();
+        var Y = YoneHot.argMax(1).castTo(DataType.DOUBLE);
         W = Nd4j.ones(X.columns(), YoneHot.columns());
 
         var loss = new Column<>(LOSS_COLUMN, new ArrayList<Double>());
@@ -72,13 +75,12 @@ public class SoftmaxRegression extends AbstractRegression {
         range(0, this.numbersOfIterations).boxed()
                 .map(idx -> this.computeGradient(W, X, Xt, YoneHot))
                 .map(gradient -> {
-                    System.out.println(this.computeNullHypothesis(X, W));
                     var gradAlpha = gradient.mul(this.alpha);
                     W.subi(gradAlpha);
                     return W;
                 })
                 .map(W -> computeNullHypothesis(X, W))
-                .map(prediction -> Map.entry(computeLoss(prediction, YoneHot), computeAccuracy(X)))
+                .map(prediction -> Map.entry(computeLoss(prediction, Y), computeAccuracy(X)))
                 .forEach(entry -> {
                     loss.values().add(entry.getKey());
                     accuracy.values().add(entry.getValue());
@@ -90,19 +92,13 @@ public class SoftmaxRegression extends AbstractRegression {
         return this;
     }
 
-    private double computeAccuracy(INDArray x) {
-        return IntStream.range(0, labels.size())
-                .filter(idx -> {
-                    var xRow = Nd4j.create(x.getRow(idx).toDoubleVector(), 1, x.columns());
-                    var predictions = computeNullHypothesis(xRow, W);
-                    int predictedValue = Nd4j.argMax(predictions, 1).getInt(0);
-                    return labels.get(predictedValue).equals(labels.get(idx));
-                }).mapToDouble(idx -> 1D)
-                .sum() / labels.size();
+    private INDArray computeNullHypothesis(INDArray X, INDArray W) {
+        return computeSoftmax(X.mmul(W));
     }
 
-    private double computeLoss(INDArray predictions, INDArray oneHot) {
-        return predictions.sub(oneHot).mmul(log(predictions).transpose()).sum().getDouble(0, 0);
+    private INDArray computeSoftmax(INDArray z) {
+        var exp = exp(z.sub(Nd4j.max(z)));
+        return exp.div(exp.sum(true, 1));
     }
 
     private INDArray computeGradient(INDArray W,
@@ -113,13 +109,22 @@ public class SoftmaxRegression extends AbstractRegression {
         return Xt.div(X.rows()).mmul(prediction.sub(yOneHot));
     }
 
-    private INDArray computeNullHypothesis(INDArray X, INDArray W) {
-        return computeSoftmax(X.mmul(W));
+    private double computeLoss(INDArray predictions, INDArray Y) {
+        var interval = NDArrayIndex.interval(0, predictions.rows());
+        var indices = NDArrayIndex.indices(Y.toLongVector());
+        var logLikelihood = log(predictions.get(interval, indices));
+        return - logLikelihood.sum(true, 1).div(predictions.rows()).getDouble(0, 0);
     }
 
-    private INDArray computeSoftmax(INDArray z) {
-        var exp = exp(z.sub(Nd4j.max(z)));
-        return exp.div(exp.sum(true, 1));
+    private double computeAccuracy(INDArray x) {
+        return IntStream.range(0, labels.size())
+                .filter(idx -> {
+                    var xRow = Nd4j.create(x.getRow(idx).toDoubleVector(), 1, x.columns());
+                    var predictions = computeNullHypothesis(xRow, W);
+                    int predictedValue = Nd4j.argMax(predictions, 1).getInt(0);
+                    return labels.get(predictedValue).equals(labels.get(idx));
+                }).mapToDouble(idx -> 1D)
+                .sum() / labels.size();
     }
 
     @Override
