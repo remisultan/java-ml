@@ -20,6 +20,7 @@ import static java.util.stream.IntStream.range;
 
 public class Dataframe {
 
+    public static final String NUMBER_REGEX = "^\\d+(\\.\\d+)*$";
     protected final Map<String, List<?>> data;
     protected final Column<?>[] columns;
     protected final int rows;
@@ -66,7 +67,7 @@ public class Dataframe {
 
     public Dataframe oneHotEncode(String columnToEncode) {
         var toEncodeColumnMap = data.get(columnToEncode).stream()
-                .distinct()
+                .distinct().sorted()
                 .map(colName -> new Column<Boolean>(colName.toString(), new ArrayList<>()))
                 .collect(toMap(Column::columnName, c -> c));
 
@@ -126,8 +127,10 @@ public class Dataframe {
             return number.doubleValue();
         } else if (obj instanceof Boolean b) {
             return b ? 1.0D : 0.0D;
+        } else if(obj instanceof String s && s.trim().matches(NUMBER_REGEX)){
+            return parseDouble(s.trim());
         } else {
-            return parseDouble(String.valueOf(obj));
+            return (double) String.valueOf(obj).hashCode();
         }
     }
 
