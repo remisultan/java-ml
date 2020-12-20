@@ -14,23 +14,15 @@ public class SoftmaxRegressionExample {
     }
 
     public static void main(String[] args) throws IOException {
-        var df = Dataframes.csv(args[0]);
-        var testDf = Dataframes.csv(args[1]);
+        var df = Dataframes.csv(args[0], ",", false);
+        var testDf = Dataframes.csv(args[1], ",", false);
 
-        var softmaxRegression = new SoftmaxRegression(100, 0.01)
-                .setResponseVariableName("quality")
-                .setPredictorNames("fixed acidity",
-                        "volatile acidity",
-                        "citric acid",
-                        "residual sugar",
-                        "chlorides",
-                        "free sulfur dioxide",
-                        "total sulfur dioxide",
-                        "density",
-                        "pH",
-                        "sulphates",
-                        "alcohol"
+        var softmaxRegression = new SoftmaxRegression(1000, 0.1)
+                .setResponseVariableName("c4")
+                .setPredictorNames(
+                        "c0", "c1", "c2", "c3"
                 ).train(df);
-        softmaxRegression.getHistory().show(10000);
+        softmaxRegression.getHistory().tail();
+        softmaxRegression.predict(testDf).show(100000);
     }
 }

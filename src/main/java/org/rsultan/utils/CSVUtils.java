@@ -10,6 +10,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import static java.util.Collections.singletonList;
+import static java.util.function.Predicate.not;
 import static java.util.stream.IntStream.range;
 
 public class CSVUtils {
@@ -35,7 +36,8 @@ public class CSVUtils {
                 .boxed()
                 .map(buildColumnHeaderName(withHeader, firstLine))
                 .toArray(Column[]::new);
-        reader.lines().map(line -> line.split(separator)).forEach(lineArray ->
+        reader.lines().filter(not(String::isEmpty))
+                .map(line -> line.split(separator)).forEach(lineArray ->
                 range(0, firstLine.length).forEach(index -> {
                     var typedValue = getValueWithType(lineArray[index]);
                     columns[index].values().add(typedValue);

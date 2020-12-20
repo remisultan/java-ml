@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.LongStream.range;
@@ -62,7 +63,10 @@ public class SoftmaxRegression extends AbstractRegression {
         var dataframeIntercept = dataframe.withColumn(INTERCEPT, () -> 1);
         var X = dataframeIntercept.toMatrix(predictorNames);
         var Xt = X.transpose();
-        this.labels = dataframe.get(responseVariableName).stream().distinct().sorted().map(Object::toString).collect(toList());
+        this.labels = dataframe.get(responseVariableName).stream()
+                .distinct().sorted()
+                .map(Object::toString)
+                .collect(toList());
         var YoneHot = dataframe.oneHotEncode(responseVariableName)
                 .withoutColumn(responseVariableName)
                 .withoutColumn(predictorNames).toMatrix();
@@ -76,16 +80,14 @@ public class SoftmaxRegression extends AbstractRegression {
                 .map(idx -> this.computeGradient(W, X, Xt, YoneHot))
                 .map(gradient -> {
                     var gradAlpha = gradient.mul(this.alpha);
-                    W.subi(gradAlpha);
+                    W = W.sub(gradAlpha);
                     return W;
                 })
                 .map(W -> computeNullHypothesis(X, W))
-                .map(prediction -> Map.entry(computeLoss(prediction, Y), computeAccuracy(X)))
+                .map(prediction -> Map.entry(computeLoss(prediction, YoneHot), computeAccuracy(X, Y)))
                 .forEach(entry -> {
                     loss.values().add(entry.getKey());
                     accuracy.values().add(entry.getValue());
-                    LOG.info("Loss: {}", entry.getKey());
-                    LOG.info("Accuracy: {}", entry.getValue());
                 });
 
         this.history = Dataframes.create(loss, accuracy);
@@ -110,21 +112,18 @@ public class SoftmaxRegression extends AbstractRegression {
     }
 
     private double computeLoss(INDArray predictions, INDArray Y) {
-        var interval = NDArrayIndex.interval(0, predictions.rows());
-        var indices = NDArrayIndex.indices(Y.toLongVector());
-        var logLikelihood = log(predictions.get(interval, indices));
-        return - logLikelihood.sum(true, 1).div(predictions.rows()).getDouble(0, 0);
+        var logLikelihood = log(predictions).mul(Y).sum(true, 1).neg();
+        return logLikelihood.mean().getDouble(0, 0);
     }
 
-    private double computeAccuracy(INDArray x) {
-        return IntStream.range(0, labels.size())
-                .filter(idx -> {
+    private double computeAccuracy(INDArray x, INDArray Y) {
+        return LongStream.range(0, x.rows()).parallel()
+                .map(idx -> {
                     var xRow = Nd4j.create(x.getRow(idx).toDoubleVector(), 1, x.columns());
                     var predictions = computeNullHypothesis(xRow, W);
-                    int predictedValue = Nd4j.argMax(predictions, 1).getInt(0);
-                    return labels.get(predictedValue).equals(labels.get(idx));
-                }).mapToDouble(idx -> 1D)
-                .sum() / labels.size();
+                    var predictedValue = predictions.argMax(1).getLong(0);
+                    return predictedValue == Y.getLong(idx) ? 1 : 0;
+                }).mapToDouble(idx -> idx).average().orElse(0);
     }
 
     @Override

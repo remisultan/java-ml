@@ -12,7 +12,10 @@ import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
 import static java.lang.Double.parseDouble;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 import static java.util.Arrays.stream;
+import static java.util.Comparator.comparing;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -80,7 +83,7 @@ public class Dataframe {
                     .forEach(column -> column.values().add(false));
         });
 
-        var columnArray = toEncodeColumnMap.values().toArray(Column[]::new);
+        var columnArray = toEncodeColumnMap.values().stream().sorted(comparing(Column::columnName)).toArray(Column[]::new);
         return Dataframes.create(
                 Stream.of(this.columns, columnArray).flatMap(Arrays::stream).toArray(Column[]::new)
         );
@@ -127,7 +130,7 @@ public class Dataframe {
             return number.doubleValue();
         } else if (obj instanceof Boolean b) {
             return b ? 1.0D : 0.0D;
-        } else if(obj instanceof String s && s.trim().matches(NUMBER_REGEX)){
+        } else if (obj instanceof String s && s.trim().matches(NUMBER_REGEX)) {
             return parseDouble(s.trim());
         } else {
             return (double) String.valueOf(obj).hashCode();
@@ -135,7 +138,15 @@ public class Dataframe {
     }
 
     public void show(int number) {
-        DataframePrinter.create(data).print(Math.min(number, this.rows));
+        this.show(0, number);
+    }
+
+    public void show(int start, int end) {
+        DataframePrinter.create(data).print(max(0, start), min(end, this.rows));
+    }
+
+    public void tail() {
+        show(this.rows - 10, this.rows);
     }
 
     public <T> List<T> get(String column) {

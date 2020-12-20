@@ -30,15 +30,15 @@ public class DataframePrinter {
         return new DataframePrinter(data);
     }
 
-    public void print(int number) {
-        var rows = buildRows(number);
+    public void print(int start, int end) {
+        var rows = buildRows(start, end);
         var columnsString = computeStringRowWith(mapIndices);
         var dashRow = range(0, columnsString.length()).boxed().map(num -> ROW_LINE_DELIMITER).collect(joining());
         printRows(rows, columnsString, dashRow);
     }
 
-    private List<List<String>> buildRows(int number) {
-        return range(0, number).boxed().map(num ->
+    private List<List<String>> buildRows(int start, int end) {
+        return range(start, end - 1).boxed().map(num ->
                 data.entrySet().stream()
                         .map(entry -> Map.entry(entry.getKey(), entry.getValue().get(num)))
                         .map(entry -> {
