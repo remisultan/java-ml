@@ -3,6 +3,8 @@ package org.rsultan.regression;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.nd4j.linalg.api.buffer.DataType;
+import org.nd4j.linalg.factory.Nd4j;
 import org.rsultan.dataframe.Dataframes;
 import org.rsultan.utils.CSVUtilsTest;
 
@@ -16,6 +18,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.of;
 
 public class LinearRegressionTest {
+
+    static {
+        Nd4j.setDefaultDataTypes(DataType.DOUBLE, DataType.DOUBLE);
+    }
 
     public static String getResourceFileName(String resourcePath) {
         var classLoader = CSVUtilsTest.class.getClassLoader();

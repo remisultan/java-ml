@@ -55,6 +55,27 @@ public class DataframeTest {
         assertThat(df.getColumns()).isEqualTo(0);
     }
 
+    @Test
+    public void must_one_hot_encode_column() {
+        var df = Dataframes
+                .create(new Column<>("colors", List.of("red", "green", "blue", "yellow")))
+                .oneHotEncode("colors");
+
+        var matrix = df.toMatrix("red", "green", "blue", "yellow");
+
+        assertThat(df.getRows()).isEqualTo(4);
+        assertThat(df.getColumns()).isEqualTo(5);
+        assertThat(df.get("red")).containsExactly(true, false, false, false);
+        assertThat(df.get("green")).containsExactly(false, true, false, false);
+        assertThat(df.get("blue")).containsExactly(false, false, true, false);
+        assertThat(df.get("yellow")).containsExactly(false, false, false, true);
+
+        assertThat(matrix.getColumn(0).toDoubleVector()).containsExactly(1, 0, 0, 0);
+        assertThat(matrix.getColumn(1).toDoubleVector()).containsExactly(0, 1, 0, 0);
+        assertThat(matrix.getColumn(2).toDoubleVector()).containsExactly(0, 0, 1, 0);
+        assertThat(matrix.getColumn(3).toDoubleVector()).containsExactly(0, 0, 0, 1);
+    }
+
     @ParameterizedTest
     @MethodSource("params_that_must_load_dataframe_correctly")
     public void must_load_dataframe_correctly(Column<?>[] columns, int expectedRows, int expectedCols) {
