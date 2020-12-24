@@ -23,6 +23,6 @@ public class SoftmaxRegressionExample {
                         "c0", "c1", "c2", "c3"
                 ).train(df);
         softmaxRegression.getHistory().tail();
-        softmaxRegression.predict(testDf).show(100000);
+        softmaxRegression.predict(testDf).show(2000);
     }
 }
