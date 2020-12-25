@@ -3,17 +3,9 @@ package org.rsultan.regression;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.indexing.NDArrayIndex;
 import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframe;
-import org.rsultan.dataframe.Dataframes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.LongStream;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.LongStream.range;
@@ -21,22 +13,12 @@ import static org.nd4j.linalg.ops.transforms.Transforms.exp;
 import static org.nd4j.linalg.ops.transforms.Transforms.log;
 
 
-public class SoftmaxRegression extends AbstractRegression {
+public class SoftmaxRegression extends GradientDescentRegression {
 
-    public static final String LOSS_COLUMN = "loss";
-    public static final String ACCURACY_COLUMN = "accuracy";
-    private static final Logger LOG = LoggerFactory.getLogger(SoftmaxRegression.class);
-    private final int numbersOfIterations;
-    private final double alpha;
-    private INDArray W;
     private List<String> labels;
-    private Dataframe history;
 
-    public SoftmaxRegression(
-            int numbersOfIterations,
-            double alpha) {
-        this.numbersOfIterations = numbersOfIterations;
-        this.alpha = alpha;
+    public SoftmaxRegression(int numbersOfIterations, double alpha) {
+        super(numbersOfIterations, alpha);
     }
 
     @Override
@@ -70,30 +52,11 @@ public class SoftmaxRegression extends AbstractRegression {
                 .withoutColumn(responseVariableName)
                 .withoutColumn(predictorNames).toMatrix();
         var Y = YoneHot.argMax(1).castTo(DataType.DOUBLE);
-        W = Nd4j.ones(X.columns(), YoneHot.columns());
-
-        var loss = new Column<>(LOSS_COLUMN, new ArrayList<Double>());
-        var accuracy = new Column<>(ACCURACY_COLUMN, new ArrayList<Double>());
-
-        range(0, this.numbersOfIterations).boxed()
-                .map(idx -> this.computeGradient(W, X, Xt, YoneHot))
-                .map(gradient -> {
-                    var gradAlpha = gradient.mul(this.alpha);
-                    W = W.sub(gradAlpha);
-                    return W;
-                })
-                .map(W -> computeNullHypothesis(X, W))
-                .map(prediction -> Map.entry(computeLoss(prediction, YoneHot), computeAccuracy(X, Y)))
-                .forEach(entry -> {
-                    loss.values().add(entry.getKey());
-                    accuracy.values().add(entry.getValue());
-                });
-
-        this.history = Dataframes.create(loss, accuracy);
+        this.run(X, Xt, Y, YoneHot);
         return this;
     }
 
-    private INDArray computeNullHypothesis(INDArray X, INDArray W) {
+    protected INDArray computeNullHypothesis(INDArray X, INDArray W) {
         return computeSoftmax(X.mmul(W));
     }
 
@@ -102,27 +65,18 @@ public class SoftmaxRegression extends AbstractRegression {
         return exp.div(exp.sum(true, 1));
     }
 
-    private INDArray computeGradient(INDArray W,
-                                     INDArray X,
-                                     INDArray Xt,
-                                     INDArray yOneHot) {
+    protected INDArray computeGradient(
+            INDArray X,
+            INDArray Xt,
+            INDArray W,
+            INDArray yOneHot) {
         var prediction = computeNullHypothesis(X, W);
         return Xt.div(X.rows()).mmul(prediction.sub(yOneHot));
     }
 
-    private double computeLoss(INDArray predictions, INDArray Y) {
+    protected double computeLoss(INDArray predictions, INDArray Y) {
         var logLikelihood = log(predictions).mul(Y).sum(true, 1).neg();
         return logLikelihood.mean().getDouble(0, 0);
-    }
-
-    private double computeAccuracy(INDArray x, INDArray Y) {
-        return LongStream.range(0, x.rows()).parallel()
-                .map(idx -> {
-                    var xRow = Nd4j.create(x.getRow(idx).toDoubleVector(), 1, x.columns());
-                    var predictions = computeNullHypothesis(xRow, W);
-                    var predictedValue = predictions.argMax(1).getLong(0);
-                    return predictedValue == Y.getLong(idx) ? 1 : 0;
-                }).mapToDouble(idx -> idx).average().orElse(0);
     }
 
     @Override
@@ -137,9 +91,5 @@ public class SoftmaxRegression extends AbstractRegression {
                 .collect(toList());
         var columns = new Column<>(predictionColumnName, predictionList);
         return dataframe.addColumn(columns);
-    }
-
-    public Dataframe getHistory() {
-        return history;
     }
 }
