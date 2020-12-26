@@ -3,19 +3,14 @@ package org.rsultan.regression;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
-import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframe;
-import java.util.List;
 
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.LongStream.range;
 import static org.nd4j.linalg.ops.transforms.Transforms.exp;
 import static org.nd4j.linalg.ops.transforms.Transforms.log;
 
 
 public class SoftmaxRegression extends GradientDescentRegression {
-
-    private List<String> labels;
 
     public SoftmaxRegression(int numbersOfIterations, double alpha) {
         super(numbersOfIterations, alpha);
@@ -41,18 +36,7 @@ public class SoftmaxRegression extends GradientDescentRegression {
 
     @Override
     public SoftmaxRegression train(Dataframe dataframe) {
-        var dataframeIntercept = dataframe.withColumn(INTERCEPT, () -> 1);
-        var X = dataframeIntercept.toMatrix(predictorNames);
-        var Xt = X.transpose();
-        this.labels = dataframe.get(responseVariableName).stream()
-                .distinct().sorted()
-                .map(Object::toString)
-                .collect(toList());
-        var YoneHot = dataframe.oneHotEncode(responseVariableName)
-                .withoutColumn(responseVariableName)
-                .withoutColumn(predictorNames).toMatrix();
-        var Y = YoneHot.argMax(1).castTo(DataType.DOUBLE);
-        this.run(X, Xt, Y, YoneHot);
+        super.train(dataframe);
         return this;
     }
 
@@ -77,19 +61,5 @@ public class SoftmaxRegression extends GradientDescentRegression {
     protected double computeLoss(INDArray predictions, INDArray Y) {
         var logLikelihood = log(predictions).mul(Y).sum(true, 1).neg();
         return logLikelihood.mean().getDouble(0, 0);
-    }
-
-    @Override
-    public Dataframe predict(Dataframe dataframe) {
-        var dataframeIntercept = dataframe.withColumn(INTERCEPT, () -> 1);
-        var X = dataframeIntercept.toMatrix(predictorNames);
-        var predictions = computeNullHypothesis(X, W);
-        var predictionList = range(0, predictions.rows()).boxed()
-                .map(predictions::getRow)
-                .map(row -> Nd4j.argMax(row).getInt(0))
-                .map(labels::get)
-                .collect(toList());
-        var columns = new Column<>(predictionColumnName, predictionList);
-        return dataframe.addColumn(columns);
     }
 }
