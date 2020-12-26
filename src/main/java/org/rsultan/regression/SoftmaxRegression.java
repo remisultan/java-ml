@@ -3,14 +3,19 @@ package org.rsultan.regression;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
+import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframe;
+import org.rsultan.dataframe.Dataframes;
+
+import java.util.ArrayList;
 
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.LongStream.range;
 import static org.nd4j.linalg.ops.transforms.Transforms.exp;
 import static org.nd4j.linalg.ops.transforms.Transforms.log;
 
 
-public class SoftmaxRegression extends GradientDescentRegression {
+public class SoftmaxRegression extends AbstractLogisticRegression {
 
     public SoftmaxRegression(int numbersOfIterations, double alpha) {
         super(numbersOfIterations, alpha);
@@ -35,9 +40,17 @@ public class SoftmaxRegression extends GradientDescentRegression {
     }
 
     @Override
-    public SoftmaxRegression train(Dataframe dataframe) {
-        super.train(dataframe);
-        return this;
+    public Dataframe predict(Dataframe dataframe) {
+        var dataframeIntercept = dataframe.withColumn(INTERCEPT, () -> 1);
+        var X = dataframeIntercept.toMatrix(predictorNames);
+        var predictions = computeNullHypothesis(X, W);
+        var predictionList = range(0, predictions.rows()).boxed()
+                .map(predictions::getRow)
+                .map(row -> Nd4j.argMax(row).getInt(0))
+                .map(labels::get)
+                .collect(toList());
+        var columns = new Column<>(predictionColumnName, predictionList);
+        return dataframe.addColumn(columns);
     }
 
     protected INDArray computeNullHypothesis(INDArray X, INDArray W) {

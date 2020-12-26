@@ -17,12 +17,27 @@ public class LogisticRegressionExample {
         var df = Dataframes.csv(args[0], ",", false);
         var testDf = Dataframes.csv(args[1], ",", false);
 
-        var softmaxRegression = new LogisticRegression(1000, 0.1)
+        var setosaRegression = new LogisticRegression(1000, 0.01)
                 .setResponseVariableName("c4")
-                .setPredictorNames(
-                        "c0", "c1", "c2", "c3"
-                ).train(df);
-        softmaxRegression.getHistory().tail();
-        softmaxRegression.predict(testDf).show(2000);
+                .setPredictorNames("c0", "c1", "c2", "c3")
+                .setLabel("Iris-setosa")
+                .train(df);
+        setosaRegression.getHistory().tail();
+        setosaRegression.predict(testDf).show(1000);
+        var versicolorRegression = new LogisticRegression(1000, 0.1)
+                .setResponseVariableName("c4")
+                .setPredictorNames("c0", "c1", "c2", "c3")
+                .setLabel("Iris-versicolor")
+                .train(df);
+        versicolorRegression.getHistory().tail();
+        versicolorRegression.predict(testDf).show(1000);
+
+        var virginicaRegression = new LogisticRegression(1000, 0.1)
+                .setResponseVariableName("c4")
+                .setPredictorNames("c0", "c1", "c2", "c3")
+                .setLabel("Iris-virginica")
+                .train(df);
+        virginicaRegression.getHistory().tail();
+        virginicaRegression.predict(testDf).show(1000);
     }
 }

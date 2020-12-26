@@ -14,47 +14,27 @@ import java.util.stream.LongStream;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.LongStream.range;
 
-public abstract class GradientDescentRegression extends AbstractRegression {
+public abstract class AbstractLogisticRegression extends AbstractRegression {
 
-    private static final String LOSS_COLUMN = "loss";
-    private static final String ACCURACY_COLUMN = "accuracy";
+    static final String LOSS_COLUMN = "loss";
+    static final String ACCURACY_COLUMN = "accuracy";
 
     protected final int numbersOfIterations;
     protected final double alpha;
     protected INDArray W;
     protected INDArray XMean;
     protected List<String> labels;
-    private Dataframe history;
+    protected Dataframe history;
     private int lossAccuracyOffset;
 
-    protected GradientDescentRegression(int numbersOfIterations, double alpha) {
+    protected AbstractLogisticRegression(int numbersOfIterations, double alpha) {
         this.numbersOfIterations = numbersOfIterations;
         this.alpha = alpha;
         setLossAccuracyOffset(100);
     }
 
     @Override
-    public Dataframe predict(Dataframe dataframe) {
-        var dataframeIntercept = dataframe.withColumn(INTERCEPT, () -> 1);
-        var X = dataframeIntercept.toMatrix(predictorNames);
-        var predictions = computeNullHypothesis(X, W);
-        var predictionList = range(0, predictions.rows()).boxed()
-                .map(predictions::getRow)
-                .map(row -> Nd4j.argMax(row).getInt(0))
-                .map(labels::get)
-                .collect(toList());
-        var columns = new Column<>(predictionColumnName, predictionList);
-        return dataframe.addColumn(columns);
-    }
-
-    protected abstract INDArray computeNullHypothesis(INDArray X, INDArray W);
-
-    protected abstract INDArray computeGradient(INDArray X, INDArray Xt, INDArray W, INDArray labels);
-
-    protected abstract double computeLoss(INDArray prediction, INDArray trueLabels);
-
-    @Override
-    public GradientDescentRegression train(Dataframe dataframe) {
+    public AbstractLogisticRegression train(Dataframe dataframe) {
         var dataframeIntercept = dataframe.withColumn(INTERCEPT, () -> 1);
         var X = dataframeIntercept.toMatrix(predictorNames);
         XMean = X.mean(true ,1);
@@ -94,6 +74,26 @@ public abstract class GradientDescentRegression extends AbstractRegression {
         this.history = Dataframes.create(loss, accuracy);
     }
 
+    @Override
+    public Dataframe predict(Dataframe dataframe) {
+        var dataframeIntercept = dataframe.withColumn(INTERCEPT, () -> 1);
+        var X = dataframeIntercept.toMatrix(predictorNames);
+        var predictions = computeNullHypothesis(X, W);
+        var predictionList = range(0, predictions.rows()).boxed()
+                .map(predictions::getRow)
+                .map(row -> Nd4j.argMax(row).getInt(0))
+                .map(labels::get)
+                .collect(toList());
+        var columns = new Column<>(predictionColumnName, predictionList);
+        return dataframe.addColumn(columns);
+    }
+
+    protected abstract INDArray computeNullHypothesis(INDArray X, INDArray W);
+
+    protected abstract INDArray computeGradient(INDArray X, INDArray Xt, INDArray W, INDArray labels);
+
+    protected abstract double computeLoss(INDArray prediction, INDArray trueLabels);
+
     protected double computeAccuracy(INDArray X, INDArray W, INDArray Y) {
         return LongStream.range(0, X.rows()).parallel()
                 .map(idx -> {
@@ -116,4 +116,5 @@ public abstract class GradientDescentRegression extends AbstractRegression {
     public void setLossAccuracyOffset(int lossAccuracyOffset) {
         this.lossAccuracyOffset = lossAccuracyOffset;
     }
+
 }
