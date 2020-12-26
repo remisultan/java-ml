@@ -69,9 +69,9 @@ public class SoftmaxRegression extends GradientDescentRegression {
             INDArray X,
             INDArray Xt,
             INDArray W,
-            INDArray yOneHot) {
+            INDArray labels) {
         var prediction = computeNullHypothesis(X, W);
-        return Xt.div(X.rows()).mmul(prediction.sub(yOneHot));
+        return Xt.div(X.rows()).mmul(prediction.sub(labels));
     }
 
     protected double computeLoss(INDArray predictions, INDArray Y) {

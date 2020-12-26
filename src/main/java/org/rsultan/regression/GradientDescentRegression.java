@@ -7,7 +7,6 @@ import org.rsultan.dataframe.Dataframe;
 import org.rsultan.dataframe.Dataframes;
 
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.stream.LongStream;
 
 import static java.util.stream.LongStream.range;
@@ -21,15 +20,17 @@ public abstract class GradientDescentRegression extends AbstractRegression {
     protected final double alpha;
     protected INDArray W;
     private Dataframe history;
+    private int lossAccuracyOffset;
 
     protected GradientDescentRegression(int numbersOfIterations, double alpha) {
         this.numbersOfIterations = numbersOfIterations;
         this.alpha = alpha;
+        setLossAccuracyOffset(100);
     }
 
     protected abstract INDArray computeNullHypothesis(INDArray X, INDArray W);
 
-    protected abstract INDArray computeGradient(INDArray X, INDArray Xt, INDArray W, INDArray oneHotEncodedLabels);
+    protected abstract INDArray computeGradient(INDArray X, INDArray Xt, INDArray W, INDArray labels);
 
     protected abstract double computeLoss(INDArray prediction, INDArray trueLabels);
 
@@ -39,21 +40,22 @@ public abstract class GradientDescentRegression extends AbstractRegression {
         var loss = new Column<>(LOSS_COLUMN, new ArrayList<Double>());
         var accuracy = new Column<>(ACCURACY_COLUMN, new ArrayList<Double>());
 
-        range(0, this.numbersOfIterations).boxed()
-                .map(idx -> this.computeGradient(X, Xt, W, YoneHot))
-                .map(gradient -> {
-                    var gradAlpha = gradient.mul(this.alpha);
+        range(0, this.numbersOfIterations)
+                .map(idx -> {
+                    var gradAlpha = computeGradient(X, Xt, W, YoneHot).mul(this.alpha);
                     W = W.sub(gradAlpha);
-                    return W;
+                    return idx;
                 })
-                .map(W -> Map.entry(computeLoss(computeNullHypothesis(X, W), YoneHot), computeAccuracy(X, W, Y)))
-                .forEach(entry -> {
-                    loss.values().add(entry.getKey());
-                    accuracy.values().add(entry.getValue());
+                .forEach(idx -> {
+                    if(idx % getLossAccuracyOffset() == 0){
+                        var prediction = computeNullHypothesis(X, W);
+                        loss.values().add(computeLoss(prediction, YoneHot));
+                        accuracy.values().add(computeAccuracy(X, W, Y));
+                    }
                 });
 
         this.history = Dataframes.create(loss, accuracy);
-    };
+    }
 
     protected double computeAccuracy(INDArray X, INDArray W, INDArray Y) {
         return LongStream.range(0, X.rows()).parallel()
@@ -67,5 +69,13 @@ public abstract class GradientDescentRegression extends AbstractRegression {
 
     public Dataframe getHistory() {
         return history;
+    }
+
+    public int getLossAccuracyOffset() {
+        return lossAccuracyOffset;
+    }
+
+    public void setLossAccuracyOffset(int lossAccuracyOffset) {
+        this.lossAccuracyOffset = lossAccuracyOffset;
     }
 }
