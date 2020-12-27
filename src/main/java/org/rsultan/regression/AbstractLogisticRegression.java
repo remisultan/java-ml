@@ -9,6 +9,7 @@ import org.rsultan.dataframe.Dataframes;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.LongStream;
 
 import static java.util.stream.Collectors.toList;
@@ -21,8 +22,16 @@ public abstract class AbstractLogisticRegression extends AbstractRegression {
 
     protected final int numbersOfIterations;
     protected final double alpha;
+
     protected INDArray W;
+    protected INDArray X;
+    protected INDArray Xt;
     protected INDArray XMean;
+
+    protected INDArray YoneHot;
+    protected INDArray Y;
+
+
     protected List<String> labels;
     protected Dataframe history;
     private int lossAccuracyOffset;
@@ -36,18 +45,18 @@ public abstract class AbstractLogisticRegression extends AbstractRegression {
     @Override
     public AbstractLogisticRegression train(Dataframe dataframe) {
         var dataframeIntercept = dataframe.withColumn(INTERCEPT, () -> 1);
-        var X = dataframeIntercept.toMatrix(predictorNames);
+        X = dataframeIntercept.toMatrix(predictorNames);
         XMean = X.mean(true ,1);
         X = X.div(XMean);
-        var Xt = X.transpose();
+        Xt = X.transpose();
         this.labels = dataframe.get(responseVariableName).stream()
                 .distinct().sorted()
                 .map(Object::toString)
                 .collect(toList());
-        var YoneHot = dataframe.oneHotEncode(responseVariableName)
+        YoneHot = dataframe.oneHotEncode(responseVariableName)
                 .withoutColumn(responseVariableName)
                 .withoutColumn(predictorNames).toMatrix();
-        var Y = YoneHot.argMax(1).castTo(DataType.DOUBLE);
+        Y = YoneHot.argMax(1).castTo(DataType.DOUBLE);
         W = Nd4j.ones(X.columns(), YoneHot.columns());
         this.run(X, Xt, Y, YoneHot);
         return this;
@@ -66,7 +75,7 @@ public abstract class AbstractLogisticRegression extends AbstractRegression {
                 .forEach(idx -> {
                     if(idx % getLossAccuracyOffset() == 0){
                         var prediction = computeNullHypothesis(X, W);
-                        loss.values().add(computeLoss(prediction, YoneHot));
+                        loss.values().add(computeLoss(prediction));
                         accuracy.values().add(computeAccuracy(X, W, Y));
                     }
                 });
@@ -83,6 +92,7 @@ public abstract class AbstractLogisticRegression extends AbstractRegression {
                 .map(predictions::getRow)
                 .map(row -> Nd4j.argMax(row).getInt(0))
                 .map(labels::get)
+                .map(this.formatPredictedLabel())
                 .collect(toList());
         var columns = new Column<>(predictionColumnName, predictionList);
         return dataframe.addColumn(columns);
@@ -92,7 +102,9 @@ public abstract class AbstractLogisticRegression extends AbstractRegression {
 
     protected abstract INDArray computeGradient(INDArray X, INDArray Xt, INDArray W, INDArray labels);
 
-    protected abstract double computeLoss(INDArray prediction, INDArray trueLabels);
+    protected abstract double computeLoss(INDArray prediction);
+
+    protected abstract Function<String, String> formatPredictedLabel();
 
     protected double computeAccuracy(INDArray X, INDArray W, INDArray Y) {
         return LongStream.range(0, X.rows()).parallel()

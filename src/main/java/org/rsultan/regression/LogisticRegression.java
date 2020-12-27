@@ -8,6 +8,7 @@ import org.rsultan.dataframe.Dataframe;
 import org.rsultan.dataframe.Dataframes;
 
 import java.util.ArrayList;
+import java.util.function.Function;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.LongStream.range;
@@ -15,9 +16,10 @@ import static org.nd4j.linalg.ops.transforms.Transforms.sigmoid;
 
 public class LogisticRegression extends AbstractLogisticRegression {
 
-    public static final String YES = "Y";
-    public static final String NO = "N";
+    private static final String YES = "Y";
+    private static final String NO = "N";
     private String label;
+    private INDArray YMatrix;
 
     public LogisticRegression(int numbersOfIterations, double alpha) {
         super(numbersOfIterations, alpha);
@@ -62,10 +64,15 @@ public class LogisticRegression extends AbstractLogisticRegression {
     }
 
     @Override
-    protected double computeLoss(INDArray prediction, INDArray trueLabels) {
-        var h0 = trueLabels.mul(prediction);
-        var h1 = trueLabels.neg().add(1).mul(prediction.neg().add(1));
+    protected double computeLoss(INDArray prediction) {
+        var h0 = YMatrix.mul(prediction);
+        var h1 = YMatrix.neg().add(1).mul(prediction.neg().add(1));
         return h0.add(h1).mean().getDouble(0, 0);
+    }
+
+    @Override
+    protected Function<String, String> formatPredictedLabel() {
+        return label -> label.equals(YES) ? this.label : "Not " + this.label;
     }
 
     @Override
@@ -74,59 +81,22 @@ public class LogisticRegression extends AbstractLogisticRegression {
                 .withColumn(this.label, responseVariableName, obj -> obj.toString().equals(this.label) ? YES : NO)
                 .withColumn(INTERCEPT, () -> 1);
 
-        var X = df.toMatrix(predictorNames);
+        X = df.toMatrix(predictorNames);
         XMean = X.mean(true, 1);
         X = X.div(XMean);
-        var Xt = X.transpose();
+        Xt = X.transpose();
 
-        this.labels = df.get(this.label).stream()
-                .distinct().sorted()
-                .map(Object::toString)
-                .collect(toList());
+        labels = df.get(this.label).stream().distinct().sorted().map(Object::toString).collect(toList());
 
-        var YoneHot = df.oneHotEncode(this.label)
-                .withoutColumn(this.label)
+        YoneHot = df.oneHotEncode(this.label).withoutColumn(this.label)
                 .withoutColumn(responseVariableName)
                 .withoutColumn(predictorNames).toMatrix();
-        var Y = YoneHot.argMax(1).castTo(DataType.DOUBLE);
+        Y = YoneHot.argMax(1).castTo(DataType.DOUBLE);
         W = Nd4j.ones(X.columns(), YoneHot.columns());
+
+        YMatrix = Nd4j.create(Y.toDoubleVector(), Y.columns(), 1);
+
         this.run(X, Xt, Y, YoneHot);
         return this;
-    }
-
-    @Override
-    protected void run(INDArray X, INDArray Xt, INDArray Y, INDArray YoneHot) {
-        var loss = new Column<>(LOSS_COLUMN, new ArrayList<Double>());
-        var accuracy = new Column<>(ACCURACY_COLUMN, new ArrayList<Double>());
-        var YMatrix = Nd4j.create(Y.toDoubleVector(), Y.columns(), 1);
-
-        range(0, this.numbersOfIterations).map(idx -> {
-            var gradAlpha = computeGradient(X, Xt, W, YoneHot).mul(this.alpha);
-            W.subi(gradAlpha);
-            return idx;
-        }).forEach(idx -> {
-            if (idx % getLossAccuracyOffset() == 0) {
-                var prediction = computeNullHypothesis(X, W);
-                loss.values().add(computeLoss(prediction, YMatrix));
-                accuracy.values().add(computeAccuracy(X, W, Y));
-            }
-        });
-
-        this.history = Dataframes.create(loss, accuracy);
-    }
-
-    @Override
-    public Dataframe predict(Dataframe dataframe) {
-        var dataframeIntercept = dataframe.withColumn(INTERCEPT, () -> 1);
-        var X = dataframeIntercept.toMatrix(predictorNames);
-        var predictions = computeNullHypothesis(X, W);
-        var predictionList = range(0, predictions.rows()).boxed()
-                .map(predictions::getRow)
-                .map(row -> Nd4j.argMax(row).getInt(0))
-                .map(labels::get)
-                .map(label -> label.equals(YES) ? this.label : "Not " + this.label)
-                .collect(toList());
-        var columns = new Column<>(predictionColumnName, predictionList);
-        return dataframe.addColumn(columns);
     }
 }
