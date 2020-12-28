@@ -31,7 +31,6 @@ public abstract class AbstractLogisticRegression extends AbstractRegression {
     protected INDArray YoneHot;
     protected INDArray Y;
 
-
     protected List<String> labels;
     protected Dataframe history;
     private int lossAccuracyOffset;

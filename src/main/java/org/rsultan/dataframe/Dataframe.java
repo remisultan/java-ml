@@ -38,16 +38,17 @@ public class Dataframe {
         this.rows = !sizes.isEmpty() ? sizes.get(0) : 0;
     }
 
+    public Dataframe select(String... columnNames) {
+        var colNameList = List.of(columnNames);
+        return Dataframes.create(
+                Stream.of(columns)
+                        .filter(column -> colNameList.contains(column.columnName())).toArray(Column[]::new)
+        );
+    }
     public <T> Dataframe addColumn(Column<T> column) {
         var newColumn = new Column[]{column};
         return Dataframes.create(
                 Stream.of(columns, newColumn).flatMap(Arrays::stream).toArray(Column[]::new)
-        );
-    }
-
-    public <T> Dataframe addColumns(Column<T>... columns) {
-        return Dataframes.create(
-                Stream.of(this.columns, columns).flatMap(Arrays::stream).toArray(Column[]::new)
         );
     }
 

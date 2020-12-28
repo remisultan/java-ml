@@ -17,7 +17,7 @@ public class LogisticRegressionExample {
         var df = Dataframes.csv(args[0], ",", false);
         var testDf = Dataframes.csv(args[1], ",", false);
 
-        var setosaRegression = new LogisticRegression(1000, 0.01)
+        var setosaRegression = new LogisticRegression(1000, 0.1)
                 .setResponseVariableName("c4")
                 .setPredictorNames("c0", "c1", "c2", "c3")
                 .setLabel("Iris-setosa")

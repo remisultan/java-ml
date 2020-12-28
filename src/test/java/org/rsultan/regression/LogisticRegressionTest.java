@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.of;
 
-public class SoftmaxRegressionTest {
+public class LogisticRegressionTest {
 
     static {
         Nd4j.setDefaultDataTypes(DataType.DOUBLE, DataType.DOUBLE);
@@ -29,14 +29,17 @@ public class SoftmaxRegressionTest {
     private static Stream<Arguments> params_that_must_apply_softmax_regression() {
         return Stream.of(
                 of("strColumn",
+                        "a",
                         new String[]{"x"},
-                        new String[]{"a", "a", "a", "e", "e"}),
+                        new String[]{"a", "Not a", "Not a", "Not a", "Not a"}),
                 of("strColumn",
+                        "a",
                         new String[]{"x", "x2"},
-                        new String[]{"a", "a", "a", "a", "a"}),
+                        new String[]{"a", "a", "Not a", "Not a", "Not a"}),
                 of("strColumn",
+                        "a",
                         new String[]{"x", "x2", "x3"},
-                        new String[]{"a", "a", "a", "a", "a"})
+                        new String[]{"a", "a", "Not a", "Not a", "Not a"})
         );
     }
 
@@ -44,18 +47,21 @@ public class SoftmaxRegressionTest {
     @MethodSource("params_that_must_apply_softmax_regression")
     public void must_apply_softmax_regression(
             String responseVariable,
+            String label,
             String[] predictors,
             String[] expectedPredictions
     ) throws IOException {
         var dataframe = Dataframes.csv(getResourceFileName("org/rsultan/utils/example-classif.csv"));
-        var softmaxRegression = new SoftmaxRegression(100, 0.1)
+        var logisticRegression = new LogisticRegression(100, 0.5)
                 .setPredictorNames(predictors)
                 .setResponseVariableName(responseVariable)
                 .setPredictionColumnName("predictions")
+                .setLabel(label)
                 .train(dataframe);
-        softmaxRegression.getHistory().tail();
+        logisticRegression.setLossAccuracyOffset(1);
+        logisticRegression.getHistory().tail();
 
-        var dfPredict = softmaxRegression.predict(dataframe);
+        var dfPredict = logisticRegression.predict(dataframe);
         assertThat(dfPredict.<String>get("predictions").stream().toArray()).containsExactly(expectedPredictions);
     }
 }

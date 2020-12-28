@@ -3,15 +3,10 @@ package org.rsultan.regression;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
-import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframe;
-import org.rsultan.dataframe.Dataframes;
-
-import java.util.ArrayList;
 import java.util.function.Function;
 
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.LongStream.range;
 import static org.nd4j.linalg.ops.transforms.Transforms.sigmoid;
 
 public class LogisticRegression extends AbstractLogisticRegression {
@@ -88,9 +83,7 @@ public class LogisticRegression extends AbstractLogisticRegression {
 
         labels = df.get(this.label).stream().distinct().sorted().map(Object::toString).collect(toList());
 
-        YoneHot = df.oneHotEncode(this.label).withoutColumn(this.label)
-                .withoutColumn(responseVariableName)
-                .withoutColumn(predictorNames).toMatrix();
+        YoneHot = df.oneHotEncode(this.label).select(YES, NO).toMatrix();
         Y = YoneHot.argMax(1).castTo(DataType.DOUBLE);
         W = Nd4j.ones(X.columns(), YoneHot.columns());
 
