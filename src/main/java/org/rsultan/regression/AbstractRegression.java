@@ -24,6 +24,5 @@ public abstract class AbstractRegression implements Regression {
         String[] strings = {INTERCEPT};
         this.predictorNames = Stream.of(strings, names).flatMap(Arrays::stream).distinct().toArray(String[]::new);
         return this;
-
     }
 }
