@@ -6,6 +6,7 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframe;
 import org.rsultan.regression.GradientDescentRegression;
+import org.rsultan.regularization.Regularization;
 
 import java.util.List;
 import java.util.function.Function;
@@ -45,8 +46,26 @@ public class LogisticRegression extends GradientDescentRegression {
         return this;
     }
 
+    @Override
+    public LogisticRegression setRegularization(Regularization regularization) {
+        super.setRegularization(regularization);
+        return this;
+    }
+
+    @Override
+    public LogisticRegression setLossAccuracyOffset(int lossAccuracyOffset) {
+        super.setLossAccuracyOffset(lossAccuracyOffset);
+        return this;
+    }
+
     public LogisticRegression setLabel(String label) {
         this.label = label;
+        return this;
+    }
+
+    @Override
+    public LogisticRegression setLambda(double lambda) {
+        super.setLambda(lambda);
         return this;
     }
 

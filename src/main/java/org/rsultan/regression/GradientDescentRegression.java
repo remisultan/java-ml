@@ -5,6 +5,9 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframe;
 import org.rsultan.dataframe.Dataframes;
+import org.rsultan.regularization.Regularization;
+import org.rsultan.regularization.Regularizer;
+
 import java.util.ArrayList;
 import java.util.stream.LongStream;
 
@@ -12,38 +15,53 @@ import static java.util.stream.LongStream.range;
 
 public abstract class GradientDescentRegression extends AbstractRegression {
 
-    static final String LOSS_COLUMN = "loss";
-    static final String ACCURACY_COLUMN = "accuracy";
-
+    private static final String LOSS_COLUMN = "loss";
+    private static final String ACCURACY_COLUMN = "accuracy";
     protected final int numbersOfIterations;
     protected final double alpha;
-
+    protected Regularization regularization;
     protected Dataframe history;
     private int lossAccuracyOffset;
+    private double lambda = 0.001D;
 
     protected GradientDescentRegression(int numbersOfIterations, double alpha) {
         this.numbersOfIterations = numbersOfIterations;
         this.alpha = alpha;
         setLossAccuracyOffset(100);
+        setRegularization(Regularization.NONE);
+        setLambda(0.001);
     }
 
-    protected void run(){
+    protected GradientDescentRegression setRegularization(Regularization regularization) {
+        this.regularization = regularization;
+        return this;
+    }
+
+    public GradientDescentRegression setLossAccuracyOffset(int lossAccuracyOffset) {
+        this.lossAccuracyOffset = lossAccuracyOffset;
+        return this;
+    }
+
+    public GradientDescentRegression setLambda(double lambda) {
+        this.lambda = lambda;
+        return this;
+    }
+
+    protected void run() {
         var loss = new Column<>(LOSS_COLUMN, new ArrayList<Double>());
         var accuracy = new Column<>(ACCURACY_COLUMN, new ArrayList<Double>());
 
-        range(0, this.numbersOfIterations)
-                .map(idx -> {
-                    var gradAlpha = computeGradient().mul(this.alpha);
-                    W = W.sub(gradAlpha);
-                    return idx;
-                })
-                .forEach(idx -> {
-                    if(idx % getLossAccuracyOffset() == 0){
-                        var prediction = computeNullHypothesis(X, W);
-                        loss.values().add(computeLoss(prediction));
-                        accuracy.values().add(computeAccuracy(X, W, Y));
-                    }
-                });
+        range(0, this.numbersOfIterations).forEach(idx -> {
+            var regularizer = regularization.getRegularizer(W, lambda);
+            if (idx % lossAccuracyOffset == 0) {
+                var prediction = computeNullHypothesis(X, W);
+                double lossValue = computeLoss(prediction);
+                loss.values().add(lossValue + regularizer.regularize());
+                accuracy.values().add(computeAccuracy(X, W, Y));
+            }
+            var gradAlpha = computeGradient().mul(this.alpha).add(regularizer.gradientRegularize());
+            W.subi(gradAlpha);
+        });
 
         this.history = Dataframes.create(loss, accuracy);
     }
@@ -64,13 +82,4 @@ public abstract class GradientDescentRegression extends AbstractRegression {
     public Dataframe getHistory() {
         return history;
     }
-
-    public int getLossAccuracyOffset() {
-        return lossAccuracyOffset;
-    }
-
-    public void setLossAccuracyOffset(int lossAccuracyOffset) {
-        this.lossAccuracyOffset = lossAccuracyOffset;
-    }
-
 }
