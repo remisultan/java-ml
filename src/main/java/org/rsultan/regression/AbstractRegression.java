@@ -1,5 +1,7 @@
 package org.rsultan.regression;
 
+import org.nd4j.linalg.api.ndarray.INDArray;
+
 import java.util.Arrays;
 import java.util.stream.Stream;
 
@@ -9,6 +11,12 @@ public abstract class AbstractRegression implements Regression {
     protected String responseVariableName = "Y";
     protected String[] predictorNames = {};
     protected String predictionColumnName = "predictions";
+
+    protected INDArray X;
+    protected INDArray Xt;
+    protected INDArray XMean;
+    protected INDArray Y;
+    protected INDArray W;
 
     protected Regression setResponseVariableName(String name) {
         this.responseVariableName = name;

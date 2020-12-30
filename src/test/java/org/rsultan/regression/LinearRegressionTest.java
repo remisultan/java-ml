@@ -6,6 +6,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.factory.Nd4j;
 import org.rsultan.dataframe.Dataframes;
+import org.rsultan.regression.impl.LinearRegression;
 import org.rsultan.utils.CSVUtilsTest;
 
 import java.io.File;
@@ -81,7 +82,7 @@ public class LinearRegressionTest {
                 .train(dataframe);
         linearRegression.showMetrics();
 
-        assertThat(linearRegression.getBETA().toDoubleVector()).containsExactly(expectedBeta);
+        assertThat(linearRegression.getW().toDoubleVector()).containsExactly(expectedBeta);
         assertThat(linearRegression.getMSE()).isEqualTo(expectedMSE);
         assertThat(linearRegression.getRMSE()).isEqualTo(expectedRMSE);
         assertThat(linearRegression.getR2()).isEqualTo(expectedR2);

@@ -1,20 +1,27 @@
-package org.rsultan.regression;
+package org.rsultan.regression.impl;
 
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
+import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframe;
+import org.rsultan.regression.GradientDescentRegression;
+
+import java.util.List;
 import java.util.function.Function;
 
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.LongStream.range;
 import static org.nd4j.linalg.ops.transforms.Transforms.sigmoid;
 
-public class LogisticRegression extends AbstractLogisticRegression {
+public class LogisticRegression extends GradientDescentRegression {
 
     private static final String YES = "Y";
     private static final String NO = "N";
     private String label;
-    private INDArray YMatrix;
+    protected INDArray YMatrix;
+    protected INDArray YoneHot;
+    protected List<String> labels;
 
     public LogisticRegression(int numbersOfIterations, double alpha) {
         super(numbersOfIterations, alpha);
@@ -44,7 +51,7 @@ public class LogisticRegression extends AbstractLogisticRegression {
     }
 
     @Override
-    protected INDArray computeNullHypothesis(INDArray X, INDArray W) {
+    public INDArray computeNullHypothesis(INDArray X, INDArray W) {
         return computeSigmoid(X.mmul(W));
     }
 
@@ -53,19 +60,33 @@ public class LogisticRegression extends AbstractLogisticRegression {
     }
 
     @Override
-    protected INDArray computeGradient(INDArray X, INDArray Xt, INDArray W, INDArray labels) {
+    protected INDArray computeGradient() {
         var prediction = computeNullHypothesis(X, W);
-        return Xt.div(X.rows()).mmul(prediction.sub(labels));
+        return Xt.div(X.rows()).mmul(prediction.sub(YoneHot));
     }
 
     @Override
-    protected double computeLoss(INDArray prediction) {
+    public double computeLoss(INDArray prediction) {
         var h0 = YMatrix.mul(prediction);
         var h1 = YMatrix.neg().add(1).mul(prediction.neg().add(1));
         return h0.add(h1).mean().getDouble(0, 0);
     }
 
     @Override
+    public Dataframe predict(Dataframe dataframe) {
+        var dataframeIntercept = dataframe.withColumn(INTERCEPT, () -> 1);
+        var X = dataframeIntercept.toMatrix(predictorNames);
+        var predictions = computeNullHypothesis(X, W);
+        var predictionList = range(0, predictions.rows()).boxed()
+                .map(predictions::getRow)
+                .map(row -> Nd4j.argMax(row).getInt(0))
+                .map(labels::get)
+                .map(this.formatPredictedLabel())
+                .collect(toList());
+        var columns = new Column<>(predictionColumnName, predictionList);
+        return dataframe.addColumn(columns);
+    }
+
     protected Function<String, String> formatPredictedLabel() {
         return label -> label.equals(YES) ? this.label : "Not " + this.label;
     }
@@ -89,7 +110,7 @@ public class LogisticRegression extends AbstractLogisticRegression {
 
         YMatrix = Nd4j.create(Y.toDoubleVector(), Y.columns(), 1);
 
-        this.run(X, Xt, Y, YoneHot);
+        this.run();
         return this;
     }
 }

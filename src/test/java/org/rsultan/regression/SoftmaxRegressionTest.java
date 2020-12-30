@@ -6,6 +6,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.factory.Nd4j;
 import org.rsultan.dataframe.Dataframes;
+import org.rsultan.regression.impl.SoftmaxRegression;
 import org.rsultan.utils.CSVUtilsTest;
 
 import java.io.File;
@@ -30,13 +31,13 @@ public class SoftmaxRegressionTest {
         return Stream.of(
                 of("strColumn",
                         new String[]{"x"},
-                        new String[]{"a", "a", "a", "e", "e"}),
+                        new String[]{"a", "a", "b", "b", "b"}),
                 of("strColumn",
                         new String[]{"x", "x2"},
-                        new String[]{"a", "a", "a", "a", "a"}),
+                        new String[]{"a", "a", "b", "b", "b"}),
                 of("strColumn",
                         new String[]{"x", "x2", "x3"},
-                        new String[]{"a", "a", "a", "a", "a"})
+                        new String[]{"a", "a", "b", "b", "b"})
         );
     }
 
@@ -51,8 +52,9 @@ public class SoftmaxRegressionTest {
         var softmaxRegression = new SoftmaxRegression(100, 0.1)
                 .setPredictorNames(predictors)
                 .setResponseVariableName(responseVariable)
-                .setPredictionColumnName("predictions")
-                .train(dataframe);
+                .setPredictionColumnName("predictions");
+        softmaxRegression.setLossAccuracyOffset(10);
+        softmaxRegression.train(dataframe);
         softmaxRegression.getHistory().tail();
 
         var dfPredict = softmaxRegression.predict(dataframe);
