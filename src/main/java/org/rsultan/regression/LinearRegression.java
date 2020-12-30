@@ -5,11 +5,12 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.inverse.InvertMatrix;
 import org.nd4j.linalg.ops.transforms.Transforms;
-import org.rsultan.dataframe.Dataframe;
 import org.rsultan.dataframe.Column;
+import org.rsultan.dataframe.Dataframe;
 import org.rsultan.dataframe.Dataframes;
 import org.rsultan.utils.Matrices;
 
+import javax.sql.rowset.spi.XmlReader;
 import java.util.List;
 import java.util.stream.DoubleStream;
 
@@ -18,7 +19,6 @@ import static java.util.stream.Collectors.toList;
 
 public class LinearRegression extends AbstractRegression {
 
-    private INDArray BETA;
     private Double R2;
     private INDArray SSR;
     private INDArray SStot;
@@ -46,21 +46,17 @@ public class LinearRegression extends AbstractRegression {
     @Override
     public LinearRegression train(Dataframe dataframe) {
         var dataframeIntercept = dataframe.withColumn(INTERCEPT, () -> 1);
-        var X = dataframeIntercept.toMatrix(predictorNames);
-        var Y = dataframeIntercept.toVector(responseVariableName);
+        X = dataframeIntercept.toMatrix(predictorNames);
+        Xt = dataframeIntercept.toMatrix(predictorNames);
+        XMean = X.mean(true, 1);
+        Y = dataframeIntercept.toVector(responseVariableName);
 
-        this.BETA = computeBeta(X, Y);
-
-        var epsilon = Y.sub(X.mmul(BETA));
-        this.SSR = epsilon.transpose().mmul(epsilon);
-
-        this.MSE = this.SSR.div(Y.rows()).getDouble(0, 0);
-        this.RMSE = Math.sqrt(this.MSE);
-
+        this.W = computeNullHypothesis(X, Y);
+        this.RMSE = computeLoss(W);
         this.SStot = computeSStotal(Y);
         this.R2 = computeRSquare();
 
-        double degreesOfFreedom = (double) Y.rows() - (double) BETA.rows();
+        double degreesOfFreedom = (double) Y.rows() - (double) W.rows();
 
         this.tValues = computeTValues(degreesOfFreedom);
         this.pValues = computePValues(degreesOfFreedom);
@@ -72,10 +68,10 @@ public class LinearRegression extends AbstractRegression {
         System.out.println("\nPrediction:");
         Dataframes.create(
                 new Column<>("", stream(predictorNames).collect(toList())),
-                new Column<>("Predictors", stream(BETA.getColumn(0).toDoubleVector()).boxed().collect(toList())),
+                new Column<>("Predictors", stream(W.getColumn(0).toDoubleVector()).boxed().collect(toList())),
                 new Column<>("T-values", stream(tValues.getColumn(0).toDoubleVector()).boxed().collect(toList())),
                 new Column<>("P-values", stream(pValues.getColumn(0).toDoubleVector()).boxed().collect(toList()))
-        ).show(BETA.rows());
+        ).show(W.rows());
         System.out.print("\n");
         Dataframes.create(
                 new Column<>("MSE", List.of(MSE)),
@@ -90,14 +86,28 @@ public class LinearRegression extends AbstractRegression {
     public Dataframe predict(Dataframe dataframe) {
         var dataframeIntercept = dataframe.withColumn(INTERCEPT, () -> 1);
         var X = dataframeIntercept.toMatrix(this.predictorNames);
-        var predictions = stream(X.mmul(BETA).toDoubleVector()).boxed().collect(toList());
+        var predictions = stream(X.mmul(W).toDoubleVector()).boxed().collect(toList());
         var predictionColumn = new Column<>(this.predictionColumnName, predictions);
         return dataframe.addColumn(predictionColumn);
     }
 
+    @Override
+    public INDArray computeNullHypothesis(INDArray X, INDArray Y) {
+        return computeBeta(X, Y);
+    }
+
+    @Override
+    public double computeLoss(INDArray prediction) {
+        var epsilon = Y.sub(X.mmul(prediction));
+        this.SSR = epsilon.transpose().mmul(epsilon);
+
+        this.MSE = this.SSR.div(Y.rows()).getDouble(0, 0);
+        return Math.sqrt(this.MSE);
+    }
+
     private INDArray computeTValues(double degreesOfFreedom) {
         var SE = computeStandardError(degreesOfFreedom);
-        return this.BETA.div(SE);
+        return W.div(SE);
     }
 
     private INDArray computeStandardError(double degreesOfFreedom) {
@@ -131,8 +141,8 @@ public class LinearRegression extends AbstractRegression {
         return XtXi.mmul(XtY);
     }
 
-    public INDArray getBETA() {
-        return BETA;
+    public INDArray getW() {
+        return W;
     }
 
     public Double getR2() {

@@ -81,7 +81,7 @@ public class LinearRegressionTest {
                 .train(dataframe);
         linearRegression.showMetrics();
 
-        assertThat(linearRegression.getBETA().toDoubleVector()).containsExactly(expectedBeta);
+        assertThat(linearRegression.getW().toDoubleVector()).containsExactly(expectedBeta);
         assertThat(linearRegression.getMSE()).isEqualTo(expectedMSE);
         assertThat(linearRegression.getRMSE()).isEqualTo(expectedRMSE);
         assertThat(linearRegression.getR2()).isEqualTo(expectedR2);

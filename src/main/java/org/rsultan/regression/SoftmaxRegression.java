@@ -32,7 +32,8 @@ public class SoftmaxRegression extends AbstractLogisticRegression {
         return this;
     }
 
-    protected INDArray computeNullHypothesis(INDArray X, INDArray W) {
+    @Override
+    public INDArray computeNullHypothesis(INDArray X, INDArray W) {
         return computeSoftmax(X.mmul(W));
     }
 
@@ -50,7 +51,8 @@ public class SoftmaxRegression extends AbstractLogisticRegression {
         return Xt.div(X.rows()).mmul(prediction.sub(labels));
     }
 
-    protected double computeLoss(INDArray predictions) {
+    @Override
+    public double computeLoss(INDArray predictions) {
         var logLikelihood = log(predictions).mul(YoneHot).sum(true, 1).neg();
         return logLikelihood.mean().getDouble(0, 0);
     }

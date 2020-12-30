@@ -44,7 +44,7 @@ public class LogisticRegression extends AbstractLogisticRegression {
     }
 
     @Override
-    protected INDArray computeNullHypothesis(INDArray X, INDArray W) {
+    public INDArray computeNullHypothesis(INDArray X, INDArray W) {
         return computeSigmoid(X.mmul(W));
     }
 
@@ -59,7 +59,7 @@ public class LogisticRegression extends AbstractLogisticRegression {
     }
 
     @Override
-    protected double computeLoss(INDArray prediction) {
+    public double computeLoss(INDArray prediction) {
         var h0 = YMatrix.mul(prediction);
         var h1 = YMatrix.neg().add(1).mul(prediction.neg().add(1));
         return h0.add(h1).mean().getDouble(0, 0);

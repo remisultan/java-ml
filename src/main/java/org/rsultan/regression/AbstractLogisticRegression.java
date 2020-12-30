@@ -24,12 +24,7 @@ public abstract class AbstractLogisticRegression extends AbstractRegression {
     protected final double alpha;
 
     protected INDArray W;
-    protected INDArray X;
-    protected INDArray Xt;
-    protected INDArray XMean;
-
     protected INDArray YoneHot;
-    protected INDArray Y;
 
     protected List<String> labels;
     protected Dataframe history;
@@ -97,11 +92,8 @@ public abstract class AbstractLogisticRegression extends AbstractRegression {
         return dataframe.addColumn(columns);
     }
 
-    protected abstract INDArray computeNullHypothesis(INDArray X, INDArray W);
-
     protected abstract INDArray computeGradient(INDArray X, INDArray Xt, INDArray W, INDArray labels);
 
-    protected abstract double computeLoss(INDArray prediction);
 
     protected abstract Function<String, String> formatPredictedLabel();
 
