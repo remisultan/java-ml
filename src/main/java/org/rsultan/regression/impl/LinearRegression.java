@@ -1,4 +1,4 @@
-package org.rsultan.regression;
+package org.rsultan.regression.impl;
 
 import org.apache.commons.math3.distribution.TDistribution;
 import org.nd4j.linalg.api.ndarray.INDArray;
@@ -8,9 +8,9 @@ import org.nd4j.linalg.ops.transforms.Transforms;
 import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframe;
 import org.rsultan.dataframe.Dataframes;
+import org.rsultan.regression.AbstractRegression;
 import org.rsultan.utils.Matrices;
 
-import javax.sql.rowset.spi.XmlReader;
 import java.util.List;
 import java.util.stream.DoubleStream;
 

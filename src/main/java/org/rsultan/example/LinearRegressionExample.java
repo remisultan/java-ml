@@ -3,7 +3,7 @@ package org.rsultan.example;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.factory.Nd4j;
 import org.rsultan.dataframe.Dataframes;
-import org.rsultan.regression.LinearRegression;
+import org.rsultan.regression.impl.LinearRegression;
 
 import java.io.IOException;
 
