@@ -7,6 +7,7 @@ import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.factory.Nd4j;
 import org.rsultan.dataframe.Dataframes;
 import org.rsultan.regression.impl.SoftmaxRegression;
+import org.rsultan.regularization.Regularization;
 import org.rsultan.utils.CSVUtilsTest;
 
 import java.io.File;
@@ -15,6 +16,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.of;
+import static org.rsultan.regularization.Regularization.*;
 
 public class SoftmaxRegressionTest {
 
@@ -29,15 +31,15 @@ public class SoftmaxRegressionTest {
 
     private static Stream<Arguments> params_that_must_apply_softmax_regression() {
         return Stream.of(
-                of("strColumn",
-                        new String[]{"x"},
-                        new String[]{"a", "a", "b", "b", "b"}),
-                of("strColumn",
-                        new String[]{"x", "x2"},
-                        new String[]{"a", "a", "b", "b", "b"}),
-                of("strColumn",
-                        new String[]{"x", "x2", "x3"},
-                        new String[]{"a", "a", "b", "b", "b"})
+                of("strColumn", NONE, new String[]{"x"}, new String[]{"a", "a", "b", "b", "b"}),
+                of("strColumn", RIDGE, new String[]{"x"}, new String[]{"a", "b", "b", "b", "b"}),
+                of("strColumn", LASSO, new String[]{"x"}, new String[]{"b", "b", "b", "e", "e"}),
+                of("strColumn", NONE, new String[]{"x", "x2"}, new String[]{"a", "a", "b", "b", "b"}),
+                of("strColumn", RIDGE, new String[]{"x", "x2"}, new String[]{"a", "b", "b", "b", "b"}),
+                of("strColumn", LASSO, new String[]{"x", "x2"}, new String[]{"e", "e", "e", "e", "e"}),
+                of("strColumn", NONE, new String[]{"x", "x2", "x3"}, new String[]{"a", "a", "b", "b", "b"}),
+                of("strColumn", RIDGE, new String[]{"x", "x2", "x3"}, new String[]{"a", "b", "b", "b", "b"}),
+                of("strColumn", LASSO, new String[]{"x", "x2", "x3"}, new String[]{"a", "b", "b", "b", "b"})
         );
     }
 
@@ -45,6 +47,7 @@ public class SoftmaxRegressionTest {
     @MethodSource("params_that_must_apply_softmax_regression")
     public void must_apply_softmax_regression(
             String responseVariable,
+            Regularization regularization,
             String[] predictors,
             String[] expectedPredictions
     ) throws IOException {
@@ -52,9 +55,11 @@ public class SoftmaxRegressionTest {
         var softmaxRegression = new SoftmaxRegression(100, 0.1)
                 .setPredictorNames(predictors)
                 .setResponseVariableName(responseVariable)
-                .setPredictionColumnName("predictions");
-        softmaxRegression.setLossAccuracyOffset(10);
-        softmaxRegression.train(dataframe);
+                .setRegularization(regularization)
+                .setPredictionColumnName("predictions")
+                .setLambda(0.1)
+                .setLossAccuracyOffset(10)
+                .train(dataframe);
         softmaxRegression.getHistory().tail();
 
         var dfPredict = softmaxRegression.predict(dataframe);

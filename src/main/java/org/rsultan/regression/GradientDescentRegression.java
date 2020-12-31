@@ -6,7 +6,6 @@ import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframe;
 import org.rsultan.dataframe.Dataframes;
 import org.rsultan.regularization.Regularization;
-import org.rsultan.regularization.Regularizer;
 
 import java.util.ArrayList;
 import java.util.stream.LongStream;
@@ -50,17 +49,17 @@ public abstract class GradientDescentRegression extends AbstractRegression {
     protected void run() {
         var loss = new Column<>(LOSS_COLUMN, new ArrayList<Double>());
         var accuracy = new Column<>(ACCURACY_COLUMN, new ArrayList<Double>());
+        var regularizer = regularization.getRegularizer(W, lambda);
 
         range(0, this.numbersOfIterations).forEach(idx -> {
-            var regularizer = regularization.getRegularizer(W, lambda);
+            var gradAlpha = computeGradient().mul(this.alpha).add(regularizer.gradientRegularize());
+            W.subi(gradAlpha);
             if (idx % lossAccuracyOffset == 0) {
                 var prediction = computeNullHypothesis(X, W);
                 double lossValue = computeLoss(prediction);
                 loss.values().add(lossValue + regularizer.regularize());
                 accuracy.values().add(computeAccuracy(X, W, Y));
             }
-            var gradAlpha = computeGradient().mul(this.alpha).add(regularizer.gradientRegularize());
-            W.subi(gradAlpha);
         });
 
         this.history = Dataframes.create(loss, accuracy);
