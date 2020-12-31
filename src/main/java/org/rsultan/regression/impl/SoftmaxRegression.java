@@ -4,9 +4,8 @@ import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.rsultan.dataframe.Dataframe;
-import org.rsultan.regression.GradientDescentRegression;
+import org.rsultan.regularization.Regularization;
 
-import java.util.List;
 import java.util.function.Function;
 
 import static java.util.stream.Collectors.toList;
@@ -35,6 +34,24 @@ public class SoftmaxRegression extends LogisticRegression {
     @Override
     public SoftmaxRegression setPredictorNames(String... names) {
         super.setPredictorNames(names);
+        return this;
+    }
+
+    @Override
+    public SoftmaxRegression setRegularization(Regularization regularization) {
+        super.setRegularization(regularization);
+        return this;
+    }
+
+    @Override
+    public SoftmaxRegression setLossAccuracyOffset(int lossAccuracyOffset) {
+        super.setLossAccuracyOffset(lossAccuracyOffset);
+        return this;
+    }
+
+    @Override
+    public SoftmaxRegression setLambda(double lambda) {
+        super.setLambda(lambda);
         return this;
     }
 

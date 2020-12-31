@@ -7,6 +7,9 @@ import org.rsultan.regression.impl.LogisticRegression;
 
 import java.io.IOException;
 
+import static org.rsultan.regularization.Regularization.LASSO;
+import static org.rsultan.regularization.Regularization.RIDGE;
+
 public class LogisticRegressionExample {
 
     static {
@@ -20,14 +23,19 @@ public class LogisticRegressionExample {
         var setosaRegression = new LogisticRegression(1000, 0.1)
                 .setResponseVariableName("c4")
                 .setPredictorNames("c0", "c1", "c2", "c3")
+                .setLossAccuracyOffset(100)
+                .setRegularization(RIDGE)
+                .setLambda(0.019)
                 .setLabel("Iris-setosa")
                 .train(df);
         setosaRegression.getHistory().tail();
         setosaRegression.predict(testDf).show(1000);
+
         var versicolorRegression = new LogisticRegression(1000, 0.1)
                 .setResponseVariableName("c4")
                 .setPredictorNames("c0", "c1", "c2", "c3")
                 .setLabel("Iris-versicolor")
+                .setLossAccuracyOffset(100)
                 .train(df);
         versicolorRegression.getHistory().tail();
         versicolorRegression.predict(testDf).show(1000);
@@ -36,6 +44,9 @@ public class LogisticRegressionExample {
                 .setResponseVariableName("c4")
                 .setPredictorNames("c0", "c1", "c2", "c3")
                 .setLabel("Iris-virginica")
+                .setRegularization(LASSO)
+                .setLambda(0.0015)
+                .setLossAccuracyOffset(100)
                 .train(df);
         virginicaRegression.getHistory().tail();
         virginicaRegression.predict(testDf).show(1000);
