@@ -47,8 +47,9 @@ public class LinearRegression extends AbstractRegression {
     public LinearRegression train(Dataframe dataframe) {
         var dataframeIntercept = dataframe.withColumn(INTERCEPT, () -> 1);
         X = dataframeIntercept.toMatrix(predictorNames);
-        Xt = dataframeIntercept.toMatrix(predictorNames);
         XMean = X.mean(true, 1);
+        X = X.div(XMean);
+        Xt = X.transpose();
         Y = dataframeIntercept.toVector(responseVariableName);
 
         this.W = computeBeta(X, Y);
@@ -135,7 +136,6 @@ public class LinearRegression extends AbstractRegression {
     }
 
     private INDArray computeBeta(INDArray X, INDArray Y) {
-        var Xt = X.transpose();
         var XtX = Xt.mmul(X);
         var XtY = Xt.mmul(Y);
         XtXi = InvertMatrix.invert(XtX, false);
