@@ -51,8 +51,8 @@ public class LinearRegression extends AbstractRegression {
         XMean = X.mean(true, 1);
         Y = dataframeIntercept.toVector(responseVariableName);
 
-        this.W = computeNullHypothesis(X, Y);
-        this.RMSE = computeLoss(W);
+        this.W = computeBeta(X, Y);
+        this.RMSE = computeLoss(computeNullHypothesis(X, W));
         this.SStot = computeSStotal(Y);
         this.R2 = computeRSquare();
 
@@ -86,19 +86,20 @@ public class LinearRegression extends AbstractRegression {
     public Dataframe predict(Dataframe dataframe) {
         var dataframeIntercept = dataframe.withColumn(INTERCEPT, () -> 1);
         var X = dataframeIntercept.toMatrix(this.predictorNames);
-        var predictions = stream(X.mmul(W).toDoubleVector()).boxed().collect(toList());
+        var prediction = computeNullHypothesis(X, W);
+        var predictions = stream(prediction.toDoubleVector()).boxed().collect(toList());
         var predictionColumn = new Column<>(this.predictionColumnName, predictions);
         return dataframe.addColumn(predictionColumn);
     }
 
     @Override
-    public INDArray computeNullHypothesis(INDArray X, INDArray Y) {
-        return computeBeta(X, Y);
+    public INDArray computeNullHypothesis(INDArray X, INDArray W) {
+        return X.mmul(W);
     }
 
     @Override
     public double computeLoss(INDArray prediction) {
-        var epsilon = Y.sub(X.mmul(prediction));
+        var epsilon = Y.sub(prediction);
         this.SSR = epsilon.transpose().mmul(epsilon);
 
         this.MSE = this.SSR.div(Y.rows()).getDouble(0, 0);

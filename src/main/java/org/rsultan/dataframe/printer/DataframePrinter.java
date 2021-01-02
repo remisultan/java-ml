@@ -38,7 +38,7 @@ public class DataframePrinter {
     }
 
     private List<List<String>> buildRows(int start, int end) {
-        return range(start, end - 1).boxed().map(num ->
+        return range(start, end).boxed().map(num ->
                 data.entrySet().stream()
                         .map(entry -> Map.entry(entry.getKey(), entry.getValue().get(num)))
                         .map(entry -> {
