@@ -1,4 +1,4 @@
-package org.rsultan.regularization;
+package org.rsultan.core.regularization;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;

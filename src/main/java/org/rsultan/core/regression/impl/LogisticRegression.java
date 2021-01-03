@@ -1,12 +1,12 @@
-package org.rsultan.regression.impl;
+package org.rsultan.core.regression.impl;
 
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframe;
-import org.rsultan.regression.GradientDescentRegression;
-import org.rsultan.regularization.Regularization;
+import org.rsultan.core.regression.GradientDescentRegression;
+import org.rsultan.core.regularization.Regularization;
 
 import java.util.List;
 import java.util.function.Function;
