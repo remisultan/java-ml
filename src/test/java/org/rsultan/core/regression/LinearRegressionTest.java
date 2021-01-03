@@ -1,4 +1,4 @@
-package org.rsultan.regression;
+package org.rsultan.core.regression;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -6,15 +6,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.factory.Nd4j;
 import org.rsultan.dataframe.Dataframes;
-import org.rsultan.regression.impl.LinearRegression;
+import org.rsultan.core.regression.impl.LinearRegression;
 import org.rsultan.utils.CSVUtilsTest;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.stream.Stream;
 
-import static java.lang.Double.NaN;
-import static java.lang.Double.POSITIVE_INFINITY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.of;
 
