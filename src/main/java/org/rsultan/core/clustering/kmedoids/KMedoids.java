@@ -2,16 +2,21 @@ package org.rsultan.core.clustering.kmedoids;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.LongStream.range;
+import static java.util.stream.LongStream.rangeClosed;
 import static org.apache.commons.lang3.RandomUtils.nextLong;
 
+import java.util.Arrays;
+import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.rsultan.core.clustering.Clustering;
 import org.rsultan.core.clustering.kmedoids.centroid.MedoidFactory;
 import org.rsultan.core.clustering.kmedoids.type.KMedoidType;
+import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframe;
+import org.rsultan.dataframe.Dataframes;
 
-public abstract class AbstractKMedoid implements Clustering {
+public abstract class KMedoids implements Clustering {
 
   private final KMedoidType kMedoidType;
   private final int K;
@@ -21,15 +26,16 @@ public abstract class AbstractKMedoid implements Clustering {
   private INDArray D;
   private INDArray X;
   private double error = -1;
+  private INDArray cluster;
 
-  public AbstractKMedoid(int k, int numberOfIterations, KMedoidType kMedoidType) {
+  public KMedoids(int k, int numberOfIterations, KMedoidType kMedoidType) {
     this.K = k;
     this.numberOfIterations = numberOfIterations;
     this.kMedoidType = kMedoidType;
   }
 
   @Override
-  public AbstractKMedoid train(Dataframe dataframe) {
+  public KMedoids train(Dataframe dataframe) {
     X = dataframe.toMatrix().transpose();
     C = Nd4j.create(range(0, K)
         .map(k -> nextLong(0, X.columns())).boxed()
@@ -40,12 +46,17 @@ public abstract class AbstractKMedoid implements Clustering {
         .filter(epoch -> error != 0)
         .forEach(epoch -> {
           D = computeDistance(medoidFactory);
-          var cluster = Nd4j.argMin(D, 1);
+          cluster = Nd4j.argMin(D, 1);
           var newMeans = range(0, K).boxed().map(k -> range(0, X.columns())
               .filter(xCol -> k.equals(cluster.getLong(xCol)))
               .boxed()
               .map(idx -> X.getColumn(idx)).collect(toList()))
-              .map(cols -> Nd4j.create(cols, cols.size(), X.rows()))
+              .map(cols -> {
+                if (cols.isEmpty()) {
+                  return Nd4j.empty(DataType.DOUBLE);
+                }
+                return Nd4j.create(cols, cols.size(), X.rows());
+              })
               .map(medoidFactory::computeMedoids)
               .collect(toList());
           var newCenters = Nd4j.create(newMeans, K, X.rows());
@@ -54,6 +65,14 @@ public abstract class AbstractKMedoid implements Clustering {
         });
 
     return this;
+  }
+
+  public void showMetrics() {
+    var centroids = range(0, C.rows()).boxed()
+        .map(idx -> Arrays.toString(C.getRow(idx).toDoubleVector()))
+        .collect(toList());
+    var indices = new Column<>("", rangeClosed(1, K).boxed().collect(toList()));
+    Dataframes.create(indices, new Column<>("centroids", centroids)).tail();
   }
 
   protected INDArray computeDistance(MedoidFactory medoidFactory) {
@@ -69,5 +88,9 @@ public abstract class AbstractKMedoid implements Clustering {
 
   public double getError() {
     return error;
+  }
+
+  public int getK() {
+    return K;
   }
 }
