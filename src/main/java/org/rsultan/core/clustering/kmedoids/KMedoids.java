@@ -38,8 +38,8 @@ public abstract class KMedoids implements Clustering {
   public KMedoids train(Dataframe dataframe) {
     X = dataframe.toMatrix().transpose();
     C = Nd4j.create(range(0, K)
-        .map(k -> nextLong(0, X.columns())).boxed()
-        .map(X::getColumn)
+        .map(k -> nextLong(0, X.columns()))
+        .mapToObj(X::getColumn)
         .collect(toList()), K, X.rows());
     var medoidFactory = this.kMedoidType.getMedoidFactory();
     range(0, numberOfIterations)
@@ -47,14 +47,16 @@ public abstract class KMedoids implements Clustering {
         .forEach(epoch -> {
           D = computeDistance(medoidFactory);
           cluster = Nd4j.argMin(D, 1);
-          var newMeans = range(0, K).boxed().map(k -> range(0, X.columns())
-              .filter(xCol -> k.equals(cluster.getLong(xCol))).boxed()
-              .map(idx -> X.getColumn(idx)).collect(toList()))
+          var newMedoids = range(0, K).mapToObj(k -> range(0, X.columns())
+              .filter(xCol -> k == cluster.getLong(xCol))
+              .mapToObj(idx -> X.getColumn(idx)).collect(toList()))
               .map(cols -> cols.isEmpty() ? Nd4j.empty(DataType.DOUBLE)
-                  : Nd4j.create(cols, cols.size(), X.rows())).map(medoidFactory::computeMedoids)
+                  : Nd4j.create(cols, cols.size(), X.rows()))
+              .parallel()
+              .map(medoidFactory::computeMedoids)
               .collect(toList());
-          var newCenters = Nd4j.create(newMeans, K, X.rows());
-          error = C.sub(newCenters).norm1Number().doubleValue();
+          var newCenters = Nd4j.create(newMedoids, K, X.rows());
+          error = medoidFactory.computeNorm(C.sub(newCenters));
           C = newCenters;
         });
 
@@ -71,7 +73,7 @@ public abstract class KMedoids implements Clustering {
 
   protected INDArray computeDistance(MedoidFactory medoidFactory) {
     return Nd4j.create(
-        range(0, X.columns()).boxed().map(X::getColumn)
+        range(0, X.columns()).parallel().mapToObj(X::getColumn)
             .map(column -> medoidFactory.computeDistance(C, column))
             .collect(toList()), X.columns(), K);
   }

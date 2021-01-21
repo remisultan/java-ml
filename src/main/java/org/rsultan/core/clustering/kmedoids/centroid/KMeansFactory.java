@@ -15,4 +15,9 @@ public class KMeansFactory implements MedoidFactory {
   public INDArray computeMedoids(INDArray assignedCentroids) {
     return assignedCentroids.mean(true, 0);
   }
+
+  @Override
+  public double computeNorm(INDArray diff) {
+    return diff.norm2Number().doubleValue();
+  }
 }
