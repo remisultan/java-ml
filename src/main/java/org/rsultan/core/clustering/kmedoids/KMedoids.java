@@ -48,16 +48,10 @@ public abstract class KMedoids implements Clustering {
           D = computeDistance(medoidFactory);
           cluster = Nd4j.argMin(D, 1);
           var newMeans = range(0, K).boxed().map(k -> range(0, X.columns())
-              .filter(xCol -> k.equals(cluster.getLong(xCol)))
-              .boxed()
+              .filter(xCol -> k.equals(cluster.getLong(xCol))).boxed()
               .map(idx -> X.getColumn(idx)).collect(toList()))
-              .map(cols -> {
-                if (cols.isEmpty()) {
-                  return Nd4j.empty(DataType.DOUBLE);
-                }
-                return Nd4j.create(cols, cols.size(), X.rows());
-              })
-              .map(medoidFactory::computeMedoids)
+              .map(cols -> cols.isEmpty() ? Nd4j.empty(DataType.DOUBLE)
+                  : Nd4j.create(cols, cols.size(), X.rows())).map(medoidFactory::computeMedoids)
               .collect(toList());
           var newCenters = Nd4j.create(newMeans, K, X.rows());
           error = C.sub(newCenters).norm1Number().doubleValue();
