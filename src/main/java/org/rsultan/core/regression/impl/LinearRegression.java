@@ -120,7 +120,7 @@ public class LinearRegression extends AbstractRegression {
     private INDArray computePValues(double degreesOfFreedom) {
         var tDist = new TDistribution(degreesOfFreedom);
         double[] tValues = this.tValues.toDoubleVector();
-        double[] pValues = DoubleStream.of(tValues).map(tDist::cumulativeProbability).toArray();
+        double[] pValues = DoubleStream.of(tValues).map(tDist::cumulativeProbability).map(p -> 1 - p).toArray();
         return Nd4j.create(pValues, this.tValues.rows(), 1);
     }
 

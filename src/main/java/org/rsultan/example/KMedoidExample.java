@@ -20,8 +20,12 @@ public class KMedoidExample {
 
     public static void main(String[] args) throws IOException {
         var df = Dataframes.csv(args[0], ",", false);
-        var kMeans = new KMeans(3, 10).train(df.withoutColumn("c4"));
-        var kMedians = new KMedians(3, 10).train(df.withoutColumn("c4"));
+        var start = System.currentTimeMillis();
+        var kMeans = new KMeans(3, 5).train(df.withoutColumn("c4"));
+        System.out.println((System.currentTimeMillis() - start) / 1000D);
+        start = System.currentTimeMillis();
+        var kMedians = new KMedians(3, 5).train(df.withoutColumn("c4"));
+        System.out.println((System.currentTimeMillis() - start) / 1000D);
 
         System.out.println("KMeans Centers: " + kMeans.getC());
         System.out.println("KMeans Error: " + kMeans.getError());
