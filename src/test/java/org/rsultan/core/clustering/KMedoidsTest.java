@@ -53,6 +53,6 @@ public class KMedoidsTest {
     assertThat(kMedoids.getK()).isNotNull();
     assertThat(kMedoids.getC()).isNotNull();
     assertThat(kMedoids.getC().rows()).isEqualTo(kMedoids.getK());
-    assertThat(kMedoids.getError()).isNotNull();
+    assertThat(kMedoids.getLoss()).isNotNull();
   }
 }

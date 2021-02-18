@@ -9,54 +9,64 @@ import java.util.Arrays;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.indexing.INDArrayIndex;
+import org.nd4j.linalg.indexing.NDArrayIndex;
+import org.nd4j.linalg.indexing.SpecifiedIndex;
 import org.rsultan.core.clustering.Clustering;
 import org.rsultan.core.clustering.kmedoids.centroid.MedoidFactory;
 import org.rsultan.core.clustering.kmedoids.type.KMedoidType;
 import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframe;
 import org.rsultan.dataframe.Dataframes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class KMedoids implements Clustering {
 
-  private final KMedoidType kMedoidType;
+  private final MedoidFactory kMedoidFactory;
   private final int K;
   private final int numberOfIterations;
 
   private INDArray C;
   private INDArray D;
   private INDArray X;
-  private double error = -1;
+  private INDArray Xt;
+  private double loss = -1;
   private INDArray cluster;
 
   public KMedoids(int k, int numberOfIterations, KMedoidType kMedoidType) {
     this.K = k;
     this.numberOfIterations = numberOfIterations;
-    this.kMedoidType = kMedoidType;
+    this.kMedoidFactory = kMedoidType.getMedoidFactory();
   }
 
   @Override
   public KMedoids train(Dataframe dataframe) {
-    X = dataframe.toMatrix().transpose();
+    X = dataframe.toMatrix();
+    Xt = X.transpose();
     C = Nd4j.create(range(0, K)
-        .map(k -> nextLong(0, X.columns()))
-        .mapToObj(X::getColumn)
-        .collect(toList()), K, X.rows());
-    var medoidFactory = this.kMedoidType.getMedoidFactory();
+        .map(k -> nextLong(0, Xt.columns()))
+        .mapToObj(Xt::getColumn)
+        .collect(toList()), K, Xt.rows());
+
     range(0, numberOfIterations)
-        .filter(epoch -> error != 0)
+        .filter(epoch -> loss != 0)
         .forEach(epoch -> {
-          D = computeDistance(medoidFactory);
+          D = computeDistance(kMedoidFactory);
           cluster = Nd4j.argMin(D, 1);
-          var newMedoids = range(0, K).mapToObj(k -> range(0, X.columns())
-              .filter(xCol -> k == cluster.getLong(xCol))
-              .mapToObj(idx -> X.getColumn(idx)).collect(toList()))
-              .map(cols -> cols.isEmpty() ? Nd4j.empty(DataType.DOUBLE)
-                  : Nd4j.create(cols, cols.size(), X.rows()))
-              .parallel()
-              .map(medoidFactory::computeMedoids)
+
+          var newMedoids = range(0, K).parallel()
+              .mapToObj(k -> {
+                long[] longs = range(0, Xt.columns()).parallel()
+                    .filter(xCol -> k == cluster.getLong(xCol))
+                    .toArray();
+                INDArrayIndex[] indices = {NDArrayIndex.all(), new SpecifiedIndex(longs)};
+                return Xt.get(indices).transpose();
+              }).map(kMedoidFactory::computeMedoids)
               .collect(toList());
-          var newCenters = Nd4j.create(newMedoids, K, X.rows());
-          error = medoidFactory.computeNorm(C.sub(newCenters));
+
+          var newCenters = Nd4j.create(newMedoids, K, Xt.rows());
+          loss = kMedoidFactory.computeNorm(C.sub(newCenters));
           C = newCenters;
         });
 
@@ -72,21 +82,22 @@ public abstract class KMedoids implements Clustering {
   }
 
   protected INDArray computeDistance(MedoidFactory medoidFactory) {
-    return Nd4j.create(
-        range(0, X.columns()).parallel().mapToObj(X::getColumn)
-            .map(column -> medoidFactory.computeDistance(C, column))
-            .collect(toList()), X.columns(), K);
+    return medoidFactory.computeDistance(C, X).transpose();
   }
 
   public INDArray getC() {
     return C;
   }
 
-  public double getError() {
-    return error;
+  public double getLoss() {
+    return loss;
   }
 
   public int getK() {
     return K;
+  }
+
+  public INDArray getCluster() {
+    return cluster;
   }
 }
