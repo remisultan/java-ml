@@ -30,9 +30,12 @@ public class KMedoidExample {
       throws IOException, ExecutionException, InterruptedException {
 
     var img = ImageIO.read(new File(args[0]));
+
     var red = new Column<Integer>("r", new ArrayList<>());
     var green = new Column<Integer>("g", new ArrayList<>());
     var blue = new Column<Integer>("b", new ArrayList<>());
+
+
     for (int y = 0; y < img.getHeight(); y++) {
       for (int x = 0; x < img.getWidth(); x++) {
         int pixel = img.getRGB(x, y);
@@ -43,15 +46,12 @@ public class KMedoidExample {
       }
     }
 
-    var df = Dataframes.create(
-        red,
-        green,
-        blue
-    );
+    var df = Dataframes.create(red, green, blue);
+
     System.out.println("Dataframe loaded");
 
-    final KMedoids kMeans = new KMeans(5, 4);
-    final KMedoids kMedians = new KMedians(5, 4);
+    final KMedoids kMeans = new KMeans(5, 10);
+    final KMedoids kMedians = new KMedians(5, 10);
 
     var futureKmeans = CompletableFuture.supplyAsync(() -> {
       var start = System.currentTimeMillis();

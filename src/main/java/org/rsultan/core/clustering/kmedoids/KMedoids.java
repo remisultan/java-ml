@@ -6,7 +6,6 @@ import static java.util.stream.LongStream.rangeClosed;
 import static org.apache.commons.lang3.RandomUtils.nextLong;
 
 import java.util.Arrays;
-import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.indexing.INDArrayIndex;
@@ -18,8 +17,6 @@ import org.rsultan.core.clustering.kmedoids.type.KMedoidType;
 import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframe;
 import org.rsultan.dataframe.Dataframes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public abstract class KMedoids implements Clustering {
 
@@ -44,23 +41,20 @@ public abstract class KMedoids implements Clustering {
   public KMedoids train(Dataframe dataframe) {
     X = dataframe.toMatrix();
     Xt = X.transpose();
-    C = Nd4j.create(range(0, K)
-        .map(k -> nextLong(0, Xt.columns()))
-        .mapToObj(Xt::getColumn)
-        .collect(toList()), K, Xt.rows());
+    C = buildInitialCentroids();
 
     range(0, numberOfIterations)
         .filter(epoch -> loss != 0)
         .forEach(epoch -> {
-          D = computeDistance(kMedoidFactory);
+          D = computeDistance(C, kMedoidFactory);
           cluster = Nd4j.argMin(D, 1);
 
           var newMedoids = range(0, K).parallel()
               .mapToObj(k -> {
-                long[] longs = range(0, Xt.columns()).parallel()
+                long[] indicesArray = range(0, Xt.columns()).parallel()
                     .filter(xCol -> k == cluster.getLong(xCol))
                     .toArray();
-                INDArrayIndex[] indices = {NDArrayIndex.all(), new SpecifiedIndex(longs)};
+                INDArrayIndex[] indices = {NDArrayIndex.all(), new SpecifiedIndex(indicesArray)};
                 return Xt.get(indices).transpose();
               }).map(kMedoidFactory::computeMedoids)
               .collect(toList());
@@ -73,16 +67,23 @@ public abstract class KMedoids implements Clustering {
     return this;
   }
 
+  private INDArray buildInitialCentroids() {
+    return Nd4j.create(range(0, K)
+        .map(k -> nextLong(0, Xt.columns()))
+        .mapToObj(Xt::getColumn)
+        .collect(toList()), K, Xt.rows());
+  }
+
   public void showMetrics() {
     var centroids = range(0, C.rows()).boxed()
         .map(idx -> Arrays.toString(C.getRow(idx).toDoubleVector()))
         .collect(toList());
-    var indices = new Column<>("", rangeClosed(1, K).boxed().collect(toList()));
+    var indices = new Column<>("K", rangeClosed(1, K).boxed().collect(toList()));
     Dataframes.create(indices, new Column<>("centroids", centroids)).tail();
   }
 
-  protected INDArray computeDistance(MedoidFactory medoidFactory) {
-    return medoidFactory.computeDistance(C, X).transpose();
+  protected INDArray computeDistance(INDArray centers, MedoidFactory medoidFactory) {
+    return medoidFactory.computeDistance(centers, X).transpose();
   }
 
   public INDArray getC() {
