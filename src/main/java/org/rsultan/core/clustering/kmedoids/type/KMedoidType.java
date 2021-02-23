@@ -1,5 +1,6 @@
 package org.rsultan.core.clustering.kmedoids.type;
 
+import org.nd4j.linalg.api.ndarray.INDArray;
 import org.rsultan.core.clustering.kmedoids.centroid.KMeansFactory;
 import org.rsultan.core.clustering.kmedoids.centroid.KMediansFactory;
 import org.rsultan.core.clustering.kmedoids.centroid.MedoidFactory;
