@@ -55,7 +55,8 @@ public abstract class KMedoids implements Clustering {
                     .filter(xCol -> k == cluster.getLong(xCol))
                     .toArray();
                 INDArrayIndex[] indices = {NDArrayIndex.all(), new SpecifiedIndex(indicesArray)};
-                return Xt.get(indices).transpose();
+                INDArray matrix = Xt.get(indices).transpose();
+                return matrix.isEmpty() ? Nd4j.zeros(X.shape()) : matrix;
               }).map(kMedoidFactory::computeMedoids)
               .collect(toList());
 
