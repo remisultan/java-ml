@@ -1,5 +1,7 @@
 package org.rsultan.example;
 
+import static java.util.stream.LongStream.range;
+
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -7,6 +9,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.IntStream;
 import javax.imageio.ImageIO;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.factory.Nd4j;
@@ -35,7 +38,6 @@ public class KMedoidExample {
     var green = new Column<Integer>("g", new ArrayList<>());
     var blue = new Column<Integer>("b", new ArrayList<>());
 
-
     for (int y = 0; y < img.getHeight(); y++) {
       for (int x = 0; x < img.getWidth(); x++) {
         int pixel = img.getRGB(x, y);
@@ -50,8 +52,8 @@ public class KMedoidExample {
 
     System.out.println("Dataframe loaded");
 
-    final KMedoids kMeans = new KMeans(5, 10);
-    final KMedoids kMedians = new KMedians(5, 10);
+    final KMedoids kMeans = new KMeans(10, 10);
+    final KMedoids kMedians = new KMedians(10, 10);
 
     var futureKmeans = CompletableFuture.supplyAsync(() -> {
       var start = System.currentTimeMillis();
@@ -83,15 +85,16 @@ public class KMedoidExample {
     var squaredKmeansCluster = Nd4j.create(trainedkMeans.getCluster().toDoubleVector(), img.getHeight(), img.getWidth());
     var squaredKmediansCluster = Nd4j.create(trainedkMedians.getCluster().toDoubleVector(), img.getHeight(), img.getWidth());
 
-    for (int y = 0; y < img.getHeight(); y++) {
-      for (int x = 0; x < img.getWidth(); x++) {
-        var rgb1 = trainedkMeans.getC().getRow(squaredKmeansCluster.getLong(y, x));
-        var rgb2 = trainedkMedians.getC().getRow(squaredKmediansCluster.getLong(y, x));
-        img1.setRGB(x, y, new Color(rgb1.getInt(0), rgb1.getInt(1), rgb1.getInt(2)).getRGB());
-        img2.setRGB(x, y, new Color(rgb2.getInt(0), rgb2.getInt(1), rgb2.getInt(2)).getRGB());
-      }
-    }
-    ImageIO.write(img1, "png", new File(args[1] + "kmeans.png"));
-    ImageIO.write(img2, "png", new File(args[1] + "kmedians.png"));
+    IntStream.range(0, img.getHeight()).parallel().unordered().forEach(y ->
+        IntStream.range(0, img.getWidth()).parallel().unordered().forEach(x -> {
+          var rgb1 = trainedkMeans.getC().getRow(squaredKmeansCluster.getLong(y, x));
+          var rgb2 = trainedkMedians.getC().getRow(squaredKmediansCluster.getLong(y, x));
+          img1.setRGB(x, y, new Color(rgb1.getInt(0), rgb1.getInt(1), rgb1.getInt(2)).getRGB());
+          img2.setRGB(x, y, new Color(rgb2.getInt(0), rgb2.getInt(1), rgb2.getInt(2)).getRGB());
+        })
+    );
+
+    ImageIO.write(img1, "png", new File(args[1] + kMeans.getK() + "kmeans.png"));
+    ImageIO.write(img2, "png", new File(args[1] + kMedians.getK() + "kmedians.png"));
   }
 }
