@@ -13,14 +13,18 @@ import org.nd4j.linalg.indexing.NDArrayIndex;
 import org.nd4j.linalg.indexing.SpecifiedIndex;
 import org.rsultan.core.clustering.Clustering;
 import org.rsultan.core.clustering.kmedoids.centroid.MedoidFactory;
-import org.rsultan.core.clustering.kmedoids.type.KMedoidType;
+import org.rsultan.core.clustering.kmedoids.type.MedoidType;
 import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframe;
 import org.rsultan.dataframe.Dataframes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class KMedoids implements Clustering {
 
-  private final MedoidFactory kMedoidFactory;
+  private static final Logger LOG = LoggerFactory.getLogger(KMedoids.class);
+
+  private final MedoidType medoidType;
   private final int K;
   private final int numberOfIterations;
 
@@ -31,10 +35,10 @@ public abstract class KMedoids implements Clustering {
   private double loss = -1;
   private INDArray cluster;
 
-  public KMedoids(int k, int numberOfIterations, KMedoidType kMedoidType) {
+  public KMedoids(int k, int numberOfIterations, MedoidType kMedoidType) {
     this.K = k;
     this.numberOfIterations = numberOfIterations;
-    this.kMedoidFactory = kMedoidType.getMedoidFactory();
+    this.medoidType = kMedoidType;
   }
 
   @Override
@@ -42,10 +46,12 @@ public abstract class KMedoids implements Clustering {
     X = dataframe.toMatrix();
     Xt = X.transpose();
     C = buildInitialCentroids();
+    var kMedoidFactory = medoidType.getMedoidFactory();
 
     range(0, numberOfIterations)
         .filter(epoch -> loss != 0)
         .forEach(epoch -> {
+          LOG.info("Epoch {}, Loss : {} for {}", epoch, loss, medoidType);
           D = computeDistance(C, kMedoidFactory);
           cluster = Nd4j.argMin(D, 1);
 

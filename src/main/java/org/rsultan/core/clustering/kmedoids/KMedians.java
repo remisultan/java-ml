@@ -1,10 +1,10 @@
 package org.rsultan.core.clustering.kmedoids;
 
-import static org.rsultan.core.clustering.kmedoids.type.KMedoidType.K_MEDIAN;
+import static org.rsultan.core.clustering.kmedoids.type.MedoidType.MEDIAN;
 
 public class KMedians extends KMedoids {
 
   public KMedians(int k, int numberOfIterations) {
-    super(k, numberOfIterations, K_MEDIAN);
+    super(k, numberOfIterations, MEDIAN);
   }
 }

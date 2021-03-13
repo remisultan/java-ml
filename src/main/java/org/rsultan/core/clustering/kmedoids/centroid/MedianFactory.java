@@ -1,23 +1,23 @@
 package org.rsultan.core.clustering.kmedoids.centroid;
 
-import static org.nd4j.linalg.ops.transforms.Transforms.allEuclideanDistances;
+import static org.nd4j.linalg.ops.transforms.Transforms.allManhattanDistances;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
 
-public class KMeansFactory implements MedoidFactory {
+public class MedianFactory implements MedoidFactory {
 
   @Override
   public INDArray computeDistance(INDArray centroids, INDArray vector) {
-    return allEuclideanDistances(centroids, vector, 1);
+    return allManhattanDistances(centroids, vector, 1);
   }
 
   @Override
   public INDArray computeMedoids(INDArray assignedCentroids) {
-    return assignedCentroids.mean(true, 0);
+    return assignedCentroids.median(0);
   }
 
   @Override
   public double computeNorm(INDArray diff) {
-    return diff.norm2Number().doubleValue();
+    return diff.norm1Number().doubleValue();
   }
 }
