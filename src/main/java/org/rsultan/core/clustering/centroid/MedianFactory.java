@@ -1,4 +1,4 @@
-package org.rsultan.core.clustering.kmedoids.centroid;
+package org.rsultan.core.clustering.centroid;
 
 import static org.nd4j.linalg.ops.transforms.Transforms.allManhattanDistances;
 

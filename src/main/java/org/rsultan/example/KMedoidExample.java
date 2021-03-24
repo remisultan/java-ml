@@ -1,6 +1,6 @@
 package org.rsultan.example;
 
-import static java.util.stream.LongStream.range;
+import static java.awt.image.BufferedImage.TYPE_INT_RGB;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
@@ -15,15 +15,14 @@ import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.factory.Nd4j;
 import org.rsultan.core.clustering.kmedoids.KMeans;
 import org.rsultan.core.clustering.kmedoids.KMedians;
-import org.rsultan.core.clustering.kmedoids.KMedoids;
 import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframes;
 
 public class KMedoidExample {
 
   /*
-   The data used is the infamous IRIS dataset
-   Make sure args[0] /path/to/your/src/main/resources/softmax/iris.data
+   Make sure args[0] /path/to/your/image.(jpg|png)
+   Make sure args[1] /output/directory/path/
   */
   static {
     Nd4j.setDefaultDataTypes(DataType.DOUBLE, DataType.DOUBLE);
@@ -52,8 +51,8 @@ public class KMedoidExample {
 
     System.out.println("Dataframe loaded");
 
-    final KMedoids kMeans = new KMeans(10, 10);
-    final KMedoids kMedians = new KMedians(10, 10);
+    final KMeans kMeans = new KMeans(8, 10);
+    final KMedians kMedians = new KMedians(8, 10);
 
     var futureKmeans = CompletableFuture.supplyAsync(() -> {
       var start = System.currentTimeMillis();
@@ -77,10 +76,8 @@ public class KMedoidExample {
     kMedians.showMetrics();
     System.out.println("KMedians Error: " + kMedians.getLoss());
 
-    var img1 = new BufferedImage(img.getWidth(), img.getHeight(),
-        BufferedImage.TYPE_INT_RGB);
-    var img2 = new BufferedImage(img.getWidth(), img.getHeight(),
-        BufferedImage.TYPE_INT_RGB);
+    var img1 = new BufferedImage(img.getWidth(), img.getHeight(), TYPE_INT_RGB);
+    var img2 = new BufferedImage(img.getWidth(), img.getHeight(), TYPE_INT_RGB);
 
     var squaredKmeansCluster = Nd4j.create(trainedkMeans.getCluster().toDoubleVector(), img.getHeight(), img.getWidth());
     var squaredKmediansCluster = Nd4j.create(trainedkMedians.getCluster().toDoubleVector(), img.getHeight(), img.getWidth());
@@ -96,5 +93,8 @@ public class KMedoidExample {
 
     ImageIO.write(img1, "png", new File(args[1] + kMeans.getK() + "kmeans.png"));
     ImageIO.write(img2, "png", new File(args[1] + kMedians.getK() + "kmedians.png"));
+
+    kMeans.predict(df).tail();
+    kMedians.predict(df).tail();
   }
 }

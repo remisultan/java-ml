@@ -6,8 +6,6 @@ import org.rsultan.dataframe.Dataframe;
 
 public interface Regression extends Trainable<Regression> {
 
-  Dataframe predict(Dataframe dataframe);
-
   INDArray computeNullHypothesis(INDArray X, INDArray W);
 
   double computeLoss(INDArray prediction);
