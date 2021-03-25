@@ -17,10 +17,13 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.rsultan.core.clustering.kmedoids.KMeans;
 import org.rsultan.core.clustering.kmedoids.KMedians;
 import org.rsultan.core.clustering.kmedoids.KMedoids;
+import org.rsultan.core.clustering.medoidshift.MeanShift;
+import org.rsultan.core.clustering.medoidshift.MedianShift;
+import org.rsultan.core.clustering.medoidshift.MedoidShift;
 import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframes;
 
-public class KMedoidsTest {
+public class MedoidShiftTest {
 
   static {
     Nd4j.setDefaultDataTypes(DataType.DOUBLE, DataType.DOUBLE);
@@ -28,18 +31,18 @@ public class KMedoidsTest {
 
   private static Stream<Arguments> params_that_must_apply_kmedoids() {
     return Stream.of(
-        Arguments.of(new KMeans(3, 10)),
-        Arguments.of(new KMeans(1, 10)),
-        Arguments.of(new KMeans(2, 10)),
-        Arguments.of(new KMedians(3, 10)),
-        Arguments.of(new KMedians(1, 10)),
-        Arguments.of(new KMedians(2, 10))
+        Arguments.of(new MeanShift(60, 30)),
+        Arguments.of(new MeanShift(65, 30)),
+        Arguments.of(new MeanShift(70, 30)),
+        Arguments.of(new MedianShift(60, 30)),
+        Arguments.of(new MedianShift(65, 30)),
+        Arguments.of(new MedianShift(70, 30))
     );
   }
 
   @ParameterizedTest
   @MethodSource("params_that_must_apply_kmedoids")
-  public void must_apply_kmedoids(KMedoids kMedoids) {
+  public void must_apply_kmedoids(MedoidShift medoidShift) {
     var dataframe = Dataframes.create(
         new Column<>("c1", range(0, 100).map(idx -> nextLong(0, 100)).boxed().collect(toList())),
         new Column<>("c2",
@@ -47,14 +50,9 @@ public class KMedoidsTest {
         new Column<>("c3", range(0, 100).boxed().map(idx -> nextFloat(0, 100)).collect(toList())),
         new Column<>("c4", range(0, 100).boxed().map(idx -> nextInt(0, 100)).collect(toList()))
     );
-    kMedoids.train(dataframe);
-    kMedoids.showMetrics();
+    medoidShift.train(dataframe);
 
-    assertThat(kMedoids.getK()).isNotNull();
-    assertThat(kMedoids.getC()).isNotNull();
-    assertThat(kMedoids.getCluster()).isNotNull();
-    assertThat(kMedoids.getC().rows()).isEqualTo(kMedoids.getK());
-    assertThat(kMedoids.getLoss()).isNotNull();
-    assertThat(kMedoids.predict(dataframe)).isNotNull();
+    assertThat(medoidShift.getC()).isNotNull();
+    assertThat(medoidShift.predict(dataframe)).isNotNull();
   }
 }

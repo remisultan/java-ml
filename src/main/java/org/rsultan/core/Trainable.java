@@ -6,4 +6,6 @@ public interface Trainable<T> {
 
   T train(Dataframe dataframe);
 
+  Dataframe predict(Dataframe dataframe);
+
 }

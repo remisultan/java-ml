@@ -1,10 +1,10 @@
-package org.rsultan.core.clustering.kmedoids.centroid;
+package org.rsultan.core.clustering.centroid;
 
 import static org.nd4j.linalg.ops.transforms.Transforms.allEuclideanDistances;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
 
-public class KMeansFactory implements MedoidFactory {
+public class MeanFactory implements MedoidFactory {
 
   @Override
   public INDArray computeDistance(INDArray centroids, INDArray vector) {

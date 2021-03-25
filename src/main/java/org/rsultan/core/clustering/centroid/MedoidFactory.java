@@ -1,4 +1,4 @@
-package org.rsultan.core.clustering.kmedoids.centroid;
+package org.rsultan.core.clustering.centroid;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
 
