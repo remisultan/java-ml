@@ -1,28 +1,40 @@
 package org.rsultan.example;
 
 import static java.awt.image.BufferedImage.TYPE_INT_RGB;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
+import static java.lang.System.currentTimeMillis;
+import static java.util.stream.IntStream.range;
 
 import java.awt.Color;
+import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.IntStream;
 import javax.imageio.ImageIO;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.factory.Nd4j;
 import org.rsultan.core.clustering.kmedoids.KMeans;
 import org.rsultan.core.clustering.kmedoids.KMedians;
+import org.rsultan.core.clustering.kmedoids.strategy.InitialisationStrategy;
+import org.rsultan.core.clustering.type.MedoidType;
 import org.rsultan.dataframe.Column;
+import org.rsultan.dataframe.Dataframe;
 import org.rsultan.dataframe.Dataframes;
 
 public class KMedoidExample {
 
   /*
    Make sure args[0] /path/to/your/image.(jpg|png)
-   Make sure args[1] /output/directory/path/
+   Make sure args[1] K >= 1
+   Make sure args[2] MEAN|MEDIAN
+   Make sure args[3] RANDOM|PLUS_PLUS
+   Make sure args[4] Epochs
+   Make sure args[5] image factor
+   Make sure args[6] directory
+   Make sure args[7] filename prefix
   */
   static {
     Nd4j.setDefaultDataTypes(DataType.DOUBLE, DataType.DOUBLE);
@@ -31,8 +43,49 @@ public class KMedoidExample {
   public static void main(String[] args)
       throws IOException, ExecutionException, InterruptedException {
 
-    var img = ImageIO.read(new File(args[0]));
+    int K = parseInt(args[1]);
+    var algorithm = MedoidType.valueOf(args[2]);
+    var initialisation = InitialisationStrategy.valueOf(args[3]);
+    int epochs = parseInt(args[4]);
 
+    var kMedoid = switch (algorithm) {
+      case MEAN -> new KMeans(K, epochs, initialisation);
+      case MEDIAN -> new KMedians(K, epochs, initialisation);
+    };
+
+    var originalImg = ImageIO.read(new File(args[0]));
+    var imgFactor = parseDouble(args[5]);
+    int width = (int) (originalImg.getWidth() * imgFactor);
+    int height = (int) (originalImg.getHeight() * imgFactor);
+    var img = resizeImage(originalImg, width, height);
+
+    var df = getDataframeFromImage(img);
+    System.out.println("Dataframe loaded");
+
+    System.out.println("Starting...");
+    var start = currentTimeMillis();
+    kMedoid.train(df);
+    System.out.println(kMedoid + "took " + ((currentTimeMillis() - start) / 1000) + " seconds");
+    kMedoid.showMetrics();
+
+    var outputImage = new BufferedImage(width, height, TYPE_INT_RGB);
+    var squaredCluster = Nd4j.create(kMedoid.getCluster().toDoubleVector(), height, width);
+
+    range(0, width).parallel().unordered().forEach(x ->
+        range(0, height).parallel().unordered().forEach(y -> {
+          var rgb1 = kMedoid.getCentroids().getRow(squaredCluster.getLong(y, x));
+          int color = new Color(rgb1.getInt(0), rgb1.getInt(1), rgb1.getInt(2)).getRGB();
+          outputImage.setRGB(x, y, color);
+        })
+    );
+
+    var directory = args[6];
+    var outputPrefix = args[7];
+    var fileName = directory + kMedoid.getK() + "_" + algorithm + "_" + outputPrefix + ".png";
+    ImageIO.write(outputImage, "png", new File(fileName));
+  }
+
+  private static Dataframe getDataframeFromImage(BufferedImage img) {
     var red = new Column<Integer>("r", new ArrayList<>());
     var green = new Column<Integer>("g", new ArrayList<>());
     var blue = new Column<Integer>("b", new ArrayList<>());
@@ -46,55 +99,15 @@ public class KMedoidExample {
         blue.values().add(color.getBlue());
       }
     }
+    return Dataframes.create(red, green, blue);
+  }
 
-    var df = Dataframes.create(red, green, blue);
-
-    System.out.println("Dataframe loaded");
-
-    final KMeans kMeans = new KMeans(8, 10);
-    final KMedians kMedians = new KMedians(8, 10);
-
-    var futureKmeans = CompletableFuture.supplyAsync(() -> {
-      var start = System.currentTimeMillis();
-      var train = kMeans.train(df);
-      System.out.println("Kmeans took:" + (System.currentTimeMillis() - start) / 1000D);
-      return train;
-    });
-
-    var futureKmedian = CompletableFuture.supplyAsync(() -> {
-      var start = System.currentTimeMillis();
-      var train = kMedians.train(df);
-      System.out.println("Kmedians took:" + (System.currentTimeMillis() - start) / 1000D);
-      return train;
-    });
-
-    var trainedkMeans = futureKmeans.get();
-    kMeans.showMetrics();
-    System.out.println("KMeans Error: " + kMeans.getLoss());
-
-    var trainedkMedians = futureKmedian.get();
-    kMedians.showMetrics();
-    System.out.println("KMedians Error: " + kMedians.getLoss());
-
-    var img1 = new BufferedImage(img.getWidth(), img.getHeight(), TYPE_INT_RGB);
-    var img2 = new BufferedImage(img.getWidth(), img.getHeight(), TYPE_INT_RGB);
-
-    var squaredKmeansCluster = Nd4j.create(trainedkMeans.getCluster().toDoubleVector(), img.getHeight(), img.getWidth());
-    var squaredKmediansCluster = Nd4j.create(trainedkMedians.getCluster().toDoubleVector(), img.getHeight(), img.getWidth());
-
-    IntStream.range(0, img.getHeight()).parallel().unordered().forEach(y ->
-        IntStream.range(0, img.getWidth()).parallel().unordered().forEach(x -> {
-          var rgb1 = trainedkMeans.getC().getRow(squaredKmeansCluster.getLong(y, x));
-          var rgb2 = trainedkMedians.getC().getRow(squaredKmediansCluster.getLong(y, x));
-          img1.setRGB(x, y, new Color(rgb1.getInt(0), rgb1.getInt(1), rgb1.getInt(2)).getRGB());
-          img2.setRGB(x, y, new Color(rgb2.getInt(0), rgb2.getInt(1), rgb2.getInt(2)).getRGB());
-        })
-    );
-
-    ImageIO.write(img1, "png", new File(args[1] + kMeans.getK() + "kmeans.png"));
-    ImageIO.write(img2, "png", new File(args[1] + kMedians.getK() + "kmedians.png"));
-
-    kMeans.predict(df).tail();
-    kMedians.predict(df).tail();
+  private static BufferedImage resizeImage(BufferedImage originalImage, int targetWidth,
+      int targetHeight) {
+    var resultingImage = originalImage
+        .getScaledInstance(targetWidth, targetHeight, Image.SCALE_SMOOTH);
+    var outputImage = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB);
+    outputImage.getGraphics().drawImage(resultingImage, 0, 0, null);
+    return outputImage;
   }
 }
