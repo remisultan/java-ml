@@ -1,5 +1,6 @@
 package org.rsultan.core.clustering.kmedoids;
 
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.LongStream.range;
 import static java.util.stream.LongStream.rangeClosed;
@@ -12,9 +13,9 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.indexing.INDArrayIndex;
 import org.nd4j.linalg.indexing.NDArrayIndex;
 import org.nd4j.linalg.indexing.SpecifiedIndex;
-import org.nd4j.linalg.indexing.conditions.Conditions;
 import org.rsultan.core.clustering.Clustering;
 import org.rsultan.core.clustering.centroid.MedoidFactory;
+import org.rsultan.core.clustering.kmedoids.strategy.InitialisationStrategy;
 import org.rsultan.core.clustering.type.MedoidType;
 import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframe;
@@ -26,35 +27,39 @@ public abstract class KMedoids implements Clustering {
 
   private static final Logger LOG = LoggerFactory.getLogger(KMedoids.class);
 
-  private final MedoidType medoidType;
-  private final int K;
-  private final int numberOfIterations;
+  protected final MedoidType medoidType;
+  protected final int K;
+  protected final int numberOfIterations;
+  protected final InitialisationStrategy initialisationStrategy;
 
-  private INDArray C;
+  private INDArray centroids;
   private INDArray D;
   private INDArray X;
   private INDArray Xt;
-  private double loss = -1;
+  private Double loss;
   private INDArray cluster;
 
-  public KMedoids(int k, int numberOfIterations, MedoidType kMedoidType) {
+  public KMedoids(int k, int numberOfIterations, MedoidType kMedoidType,
+      InitialisationStrategy initialisationStrategy) {
     this.K = k;
     this.numberOfIterations = numberOfIterations;
     this.medoidType = kMedoidType;
+    this.initialisationStrategy = initialisationStrategy;
   }
 
   @Override
   public KMedoids train(Dataframe dataframe) {
+    loss = null;
     X = dataframe.toMatrix();
     Xt = X.transpose();
-    C = buildInitialCentroids();
     var medoidFactory = medoidType.getMedoidFactory();
+    centroids = buildInitialCentroids(medoidFactory);
 
     range(0, numberOfIterations)
-        .filter(epoch -> loss != 0)
+        .filter(epoch -> ofNullable(loss).orElse(-1.0D) != 0.0D)
         .forEach(epoch -> {
           LOG.info("Epoch {}, Loss : {} for {}", epoch, loss, medoidType);
-          D = medoidFactory.computeDistance(C, X).transpose();
+          D = medoidFactory.computeDistance(centroids, X).transpose();
           cluster = Nd4j.argMin(D, 1);
 
           var newMedoids = range(0, K).parallel().unordered()
@@ -69,8 +74,8 @@ public abstract class KMedoids implements Clustering {
               .collect(toList());
 
           var newCenters = Nd4j.create(newMedoids, K, Xt.rows());
-          loss = medoidFactory.computeNorm(C.sub(newCenters));
-          C = newCenters;
+          loss = medoidFactory.computeNorm(centroids.sub(newCenters));
+          centroids = newCenters;
         });
 
     return this;
@@ -80,29 +85,36 @@ public abstract class KMedoids implements Clustering {
   public Dataframe predict(Dataframe dataframe) {
     var medoidFactory = medoidType.getMedoidFactory();
     var Xpredict = dataframe.toMatrix();
-    var distances =  medoidFactory.computeDistance(C, Xpredict).transpose();
+    var distances = medoidFactory.computeDistance(centroids, Xpredict).transpose();
     var centers = LongStream.of(Nd4j.argMin(distances, 1).toLongVector()).boxed().collect(toList());
     return dataframe.addColumn(new Column<>("K", centers))
-        .<Long, INDArray>withColumn("prediction", "K", C::getRow);
+        .<Long, INDArray>withColumn("prediction", "K", centroids::getRow);
   }
 
-  private INDArray buildInitialCentroids() {
-    return Nd4j.create(range(0, K)
-        .map(k -> nextLong(0, Xt.columns()))
-        .mapToObj(Xt::getColumn)
-        .collect(toList()), K, Xt.rows());
+  private INDArray buildInitialCentroids(MedoidFactory medoidFactory) {
+    if (centroids != null) {
+      return centroids;
+    }
+    return this.initialisationStrategy.initialiseCenters(K, Xt, medoidFactory);
   }
 
   public void showMetrics() {
-    var centroids = range(0, C.rows()).boxed()
-        .map(idx -> Arrays.toString(C.getRow(idx).toDoubleVector()))
+    var centroids = range(0, this.centroids.rows()).boxed()
+        .map(idx -> Arrays.toString(this.centroids.getRow(idx).toDoubleVector()))
         .collect(toList());
     var indices = new Column<>("K", rangeClosed(1, K).boxed().collect(toList()));
     Dataframes.create(indices, new Column<>("centroids", centroids)).tail();
   }
 
-  public INDArray getC() {
-    return C;
+  public INDArray getCentroids() {
+    return centroids;
+  }
+
+  public void setCentroids(INDArray centroids) {
+    if (centroids.columns() != getK()) {
+      throw new IllegalArgumentException("Centroid columns must be equal do K");
+    }
+    this.centroids = centroids;
   }
 
   public double getLoss() {

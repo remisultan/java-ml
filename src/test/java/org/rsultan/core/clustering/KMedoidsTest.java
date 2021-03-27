@@ -51,9 +51,9 @@ public class KMedoidsTest {
     kMedoids.showMetrics();
 
     assertThat(kMedoids.getK()).isNotNull();
-    assertThat(kMedoids.getC()).isNotNull();
+    assertThat(kMedoids.getCentroids()).isNotNull();
     assertThat(kMedoids.getCluster()).isNotNull();
-    assertThat(kMedoids.getC().rows()).isEqualTo(kMedoids.getK());
+    assertThat(kMedoids.getCentroids().rows()).isEqualTo(kMedoids.getK());
     assertThat(kMedoids.getLoss()).isNotNull();
     assertThat(kMedoids.predict(dataframe)).isNotNull();
   }
