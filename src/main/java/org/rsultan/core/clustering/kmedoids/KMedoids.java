@@ -4,7 +4,6 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.LongStream.range;
 import static java.util.stream.LongStream.rangeClosed;
-import static org.apache.commons.lang3.RandomUtils.nextLong;
 
 import java.util.Arrays;
 import java.util.stream.LongStream;
@@ -39,7 +38,10 @@ public abstract class KMedoids implements Clustering {
   private Double loss;
   private INDArray cluster;
 
-  public KMedoids(int k, int numberOfIterations, MedoidType kMedoidType,
+  protected KMedoids(
+      int k,
+      int numberOfIterations,
+      MedoidType kMedoidType,
       InitialisationStrategy initialisationStrategy) {
     this.K = k;
     this.numberOfIterations = numberOfIterations;
@@ -108,13 +110,6 @@ public abstract class KMedoids implements Clustering {
 
   public INDArray getCentroids() {
     return centroids;
-  }
-
-  public void setCentroids(INDArray centroids) {
-    if (centroids.columns() != getK()) {
-      throw new IllegalArgumentException("Centroid columns must be equal do K");
-    }
-    this.centroids = centroids;
   }
 
   public double getLoss() {
