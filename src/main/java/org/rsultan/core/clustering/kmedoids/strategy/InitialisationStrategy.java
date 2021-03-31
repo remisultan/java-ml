@@ -14,7 +14,6 @@ public enum InitialisationStrategy {
     return switch (this) {
       case RANDOM -> new RandomStrategy().initialiseCenters(k, X);
       case PLUS_PLUS -> new PlusPlusStrategy(medoidFactory).initialiseCenters(k, X);
-      default -> throw new IllegalStateException("Unexpected value: " + this);
     };
   }
 

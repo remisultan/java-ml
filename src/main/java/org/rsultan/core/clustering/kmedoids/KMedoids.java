@@ -94,9 +94,6 @@ public abstract class KMedoids implements Clustering {
   }
 
   private INDArray buildInitialCentroids(MedoidFactory medoidFactory) {
-    if (centroids != null) {
-      return centroids;
-    }
     return this.initialisationStrategy.initialiseCenters(K, Xt, medoidFactory);
   }
 

@@ -12,6 +12,6 @@ public class RandomStrategy implements InitialisationFactory {
         .generate(() -> ThreadLocalRandom.current().nextInt(X.columns()))
         .limit(K)
         .toArray();
-    return X.getColumns(centers);
+    return X.getColumns(centers).transpose();
   }
 }

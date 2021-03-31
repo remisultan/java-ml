@@ -32,7 +32,7 @@ public class PlusPlusStrategy implements InitialisationFactory {
           .getWhere(nextDouble(0, 1), greaterThanOrEqual());
       addNewCenters(X, centers, X.columns() - cumulativeSumTheshold.columns() + 1);
     }
-    return C;
+    return C.columns() == 1 ? C.transpose() : C;
   }
 
   private void addNewCenters(INDArray X, ArrayList<INDArray> centers, int index) {

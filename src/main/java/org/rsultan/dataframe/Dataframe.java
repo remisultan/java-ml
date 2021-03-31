@@ -178,9 +178,8 @@ public class Dataframe {
       return b ? 1.0D : 0.0D;
     } else if (obj instanceof String s && s.trim().matches(NUMBER_REGEX)) {
       return parseDouble(s.trim());
-    } else {
-      return (double) String.valueOf(obj).hashCode();
     }
+    throw new IllegalArgumentException("Cannot cast " + obj + " to number");
   }
 
   public void show(int number) {
