@@ -39,6 +39,8 @@ public class DataframeTest {
         of(new Column[]{new Column<>(null, (List<Object>) null)}, NullPointerException.class),
         of(new Column[]{new Column<>(null, 0, 2, 3, 4)}, NullPointerException.class),
         of(new Column<?>[]{new Column<>("c1", 1, 2), new Column<>("c2", 1, 2, 3)},
+            IllegalArgumentException.class),
+        of(new Column<?>[]{new Column<>("c1", 1, "lat65"), new Column<>("c2", 1, 2, 3)},
             IllegalArgumentException.class)
     );
   }

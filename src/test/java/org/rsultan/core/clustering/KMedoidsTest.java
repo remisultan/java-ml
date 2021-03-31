@@ -17,6 +17,7 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.rsultan.core.clustering.kmedoids.KMeans;
 import org.rsultan.core.clustering.kmedoids.KMedians;
 import org.rsultan.core.clustering.kmedoids.KMedoids;
+import org.rsultan.core.clustering.kmedoids.strategy.InitialisationStrategy;
 import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframes;
 
@@ -29,11 +30,17 @@ public class KMedoidsTest {
   private static Stream<Arguments> params_that_must_apply_kmedoids() {
     return Stream.of(
         Arguments.of(new KMeans(3, 10)),
+        Arguments.of(new KMeans(3, 10, InitialisationStrategy.RANDOM)),
         Arguments.of(new KMeans(1, 10)),
+        Arguments.of(new KMeans(1, 10, InitialisationStrategy.RANDOM)),
         Arguments.of(new KMeans(2, 10)),
+        Arguments.of(new KMeans(2, 10, InitialisationStrategy.RANDOM)),
         Arguments.of(new KMedians(3, 10)),
+        Arguments.of(new KMedians(3, 10, InitialisationStrategy.RANDOM)),
         Arguments.of(new KMedians(1, 10)),
-        Arguments.of(new KMedians(2, 10))
+        Arguments.of(new KMedians(1, 10, InitialisationStrategy.RANDOM)),
+        Arguments.of(new KMedians(2, 10)),
+        Arguments.of(new KMedians(2, 10, InitialisationStrategy.RANDOM))
     );
   }
 
@@ -51,9 +58,9 @@ public class KMedoidsTest {
     kMedoids.showMetrics();
 
     assertThat(kMedoids.getK()).isNotNull();
-    assertThat(kMedoids.getC()).isNotNull();
+    assertThat(kMedoids.getCentroids()).isNotNull();
     assertThat(kMedoids.getCluster()).isNotNull();
-    assertThat(kMedoids.getC().rows()).isEqualTo(kMedoids.getK());
+    assertThat(kMedoids.getCentroids().rows()).isEqualTo(kMedoids.getK());
     assertThat(kMedoids.getLoss()).isNotNull();
     assertThat(kMedoids.predict(dataframe)).isNotNull();
   }
