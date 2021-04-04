@@ -40,7 +40,7 @@ public class LogisticRegressionExample {
                 .setPredictorNames("c0", "c1", "c2", "c3")
                 .setLabel("Iris-versicolor")
                 .setLossAccuracyOffset(100)
-                .train(df);
+                .train(df) ;
         versicolorRegression.getHistory().tail();
         versicolorRegression.predict(testDf).show(1000);
 

@@ -44,11 +44,11 @@ public class MedoidShiftTest {
   @MethodSource("params_that_must_apply_kmedoids")
   public void must_apply_kmedoids(MedoidShift medoidShift) {
     var dataframe = Dataframes.create(
-        new Column<>("c1", range(0, 100).map(idx -> nextLong(0, 100)).boxed().collect(toList())),
+        new Column<>("c1", range(0, 20).map(idx -> nextLong(0, 100)).boxed().collect(toList())),
         new Column<>("c2",
-            range(0, 100).mapToDouble(idx -> nextDouble(0, 100)).boxed().collect(toList())),
-        new Column<>("c3", range(0, 100).boxed().map(idx -> nextFloat(0, 100)).collect(toList())),
-        new Column<>("c4", range(0, 100).boxed().map(idx -> nextInt(0, 100)).collect(toList()))
+            range(0, 20).mapToDouble(idx -> nextDouble(0, 100)).boxed().collect(toList())),
+        new Column<>("c3", range(0, 20).boxed().map(idx -> nextFloat(0, 100)).collect(toList())),
+        new Column<>("c4", range(0, 20).boxed().map(idx -> nextInt(0, 100)).collect(toList()))
     );
     medoidShift.train(dataframe);
 

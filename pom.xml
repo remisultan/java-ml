@@ -8,18 +8,18 @@
   <artifactId>nd4j-ml</artifactId>
   <version>1.0-SNAPSHOT</version>
 
-  <name>nd4j-ml</name>
+  <name>java-ml</name>
 
   <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.source>${java.version}</maven.compiler.source>
-    <maven.compiler.target>${java.version}</maven.compiler.target>
-    <nd4j.version>1.0.0-beta7</nd4j.version>
-    <univocity-parsers.version>2.9.0</univocity-parsers.version>
-    <slf4j-log4j12.version>2.0.0-alpha1</slf4j-log4j12.version>
+    <assertj-core.version>3.9.1</assertj-core.version>
     <java.version>15</java.version>
     <junit-jupiter.version>5.7.0</junit-jupiter.version>
-    <assertj-core.version>3.9.1</assertj-core.version>
+    <nd4j.version>1.0.0-beta7</nd4j.version>
+    <maven.compiler.source>${java.version}</maven.compiler.source>
+    <maven.compiler.target>${java.version}</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <slf4j-log4j12.version>2.0.0-alpha1</slf4j-log4j12.version>
+    <univocity-parsers.version>2.9.0</univocity-parsers.version>
   </properties>
 
   <dependencies>
@@ -69,14 +69,18 @@
   </dependencies>
 
   <build>
-    <pluginManagement><!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) -->
+    <finalName>java-ml</finalName>
+    <testResources>
+      <testResource>
+        <directory>${project.basedir}/src/test/resources</directory>
+      </testResource>
+    </testResources>
+    <pluginManagement>
       <plugins>
-        <!-- clean lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#clean_Lifecycle -->
         <plugin>
           <artifactId>maven-clean-plugin</artifactId>
           <version>3.1.0</version>
         </plugin>
-        <!-- default lifecycle, jar packaging: see https://maven.apache.org/ref/current/maven-core/default-bindings.html#Plugin_bindings_for_jar_packaging -->
         <plugin>
           <artifactId>maven-resources-plugin</artifactId>
           <version>3.0.2</version>
@@ -87,7 +91,14 @@
         </plugin>
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>2.22.1</version>
+          <version>3.0.0-M5</version>
+          <configuration>
+            <environmentVariables>
+              <BACKEND_PRIORITY_CPU>1</BACKEND_PRIORITY_CPU>
+              <BACKEND_PRIORITY_GPU>0</BACKEND_PRIORITY_GPU>
+            </environmentVariables>
+            <argLine>--enable-preview</argLine>
+          </configuration>
         </plugin>
         <plugin>
           <artifactId>maven-jar-plugin</artifactId>
@@ -101,7 +112,6 @@
           <artifactId>maven-deploy-plugin</artifactId>
           <version>2.8.2</version>
         </plugin>
-        <!-- site lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#site_Lifecycle -->
         <plugin>
           <artifactId>maven-site-plugin</artifactId>
           <version>3.7.1</version>
