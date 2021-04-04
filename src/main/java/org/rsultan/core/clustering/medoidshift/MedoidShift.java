@@ -53,7 +53,7 @@ public abstract class MedoidShift implements Clustering {
               .collect(toList());
           var newC = Nd4j.create(newCentroidList, newCentroidList.size(), C.rows())
               .transpose();
-          if (C.equalShapes(newC) && C.equals(newC)) {
+          if (C.equalShapes(newC) && C.equals(newC) || C.columns() == 1) {
             isTerminated.set(true);
           }
           C = newC;

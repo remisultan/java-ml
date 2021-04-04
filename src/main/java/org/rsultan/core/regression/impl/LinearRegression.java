@@ -45,7 +45,7 @@ public class LinearRegression extends AbstractRegression {
 
     @Override
     public LinearRegression train(Dataframe dataframe) {
-        var dataframeIntercept = dataframe.withColumn(INTERCEPT, () -> 1);
+        var dataframeIntercept = dataframe.map(INTERCEPT, () -> 1);
         X = dataframeIntercept.toMatrix(predictorNames);
         XMean = X.mean(true, 1);
         X = X.div(XMean);
@@ -85,7 +85,7 @@ public class LinearRegression extends AbstractRegression {
 
     @Override
     public Dataframe predict(Dataframe dataframe) {
-        var dataframeIntercept = dataframe.withColumn(INTERCEPT, () -> 1);
+        var dataframeIntercept = dataframe.map(INTERCEPT, () -> 1);
         var X = dataframeIntercept.toMatrix(this.predictorNames);
         var prediction = computeNullHypothesis(X, W);
         var predictions = stream(prediction.toDoubleVector()).boxed().collect(toList());

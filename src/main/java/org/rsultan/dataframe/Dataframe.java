@@ -1,17 +1,12 @@
 package org.rsultan.dataframe;
 
-import static java.lang.Double.parseDouble;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.util.Arrays.stream;
-import static java.util.Comparator.comparing;
-import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
-import static java.util.stream.IntStream.range;
 import static java.util.stream.Stream.of;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -21,17 +16,24 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.stream.DoubleStream;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
 import org.rsultan.dataframe.printer.DataframePrinter;
+import org.rsultan.dataframe.transform.filter.FilterDataframe;
+import org.rsultan.dataframe.transform.filter.FilterTransform;
+import org.rsultan.dataframe.transform.map.MapDataframe;
+import org.rsultan.dataframe.transform.map.MapTransform;
+import org.rsultan.dataframe.transform.matrix.MatrixDataframe;
+import org.rsultan.dataframe.transform.matrix.MatrixTransform;
 
-public class Dataframe {
+public class Dataframe implements MapTransform, FilterTransform, MatrixTransform {
 
-  public static final String NUMBER_REGEX = "^\\d+(\\.\\d+)*$";
-  protected final Map<String, List<?>> data;
-  protected final Column<?>[] columns;
-  protected final int rows;
+  private final Map<String, List<?>> data;
+  private final Column<?>[] columns;
+  private final int rows;
+
+  private final MapTransform mapTransform;
+  private final FilterTransform filterTransform;
+  private final MatrixTransform matrixTransform;
 
   Dataframe(Column<?>[] columns) {
     this.columns = columns;
@@ -42,6 +44,10 @@ public class Dataframe {
       throw new IllegalArgumentException("Dataframe column values should have the same size");
     }
     this.rows = !sizes.isEmpty() ? sizes.get(0) : 0;
+
+    this.mapTransform = new MapDataframe(this);
+    this.filterTransform = new FilterDataframe(this);
+    this.matrixTransform = new MatrixDataframe(this);
   }
 
   public Dataframe select(String... columnNames) {
@@ -53,133 +59,52 @@ public class Dataframe {
   }
 
   public <SOURCE1> Dataframe filter(String columnName, Predicate<SOURCE1> predicate) {
-    List<SOURCE1> values1 = this.get(columnName);
-    var indices = range(0, values1.size()).parallel()
-        .filter(index -> predicate.test(values1.get(index)))
-        .boxed().collect(toList());
-    return getFilteredDataframe(indices);
+    return filterTransform.filter(columnName, predicate);
   }
 
   public <SOURCE1, SOURCE2> Dataframe filter(
       String sourceColumn1,
       String sourceColumn2,
-      BiPredicate<SOURCE1, SOURCE2> predicate
-  ) {
-    List<SOURCE1> values1 = this.get(sourceColumn1);
-    List<SOURCE2> values2 = this.get(sourceColumn2);
-    var indices = range(0, values1.size()).parallel()
-        .filter(index -> predicate.test(values1.get(index), values2.get(index)))
-        .boxed().collect(toList());
-    return getFilteredDataframe(indices);
-  }
-
-  private Dataframe getFilteredDataframe(List<Integer> indices) {
-    return Dataframes.create(
-        of(columns).map(column -> new Column<>(column.columnName(),
-                range(0, column.values().size()).parallel()
-                    .filter(indices::contains)
-                    .mapToObj(column.values()::get)
-                    .collect(toList())
-            )
-        ).toArray(Column[]::new)
-    );
+      BiPredicate<SOURCE1, SOURCE2> predicate) {
+    return filterTransform.filter(sourceColumn1, sourceColumn2, predicate);
   }
 
   public <T> Dataframe addColumn(Column<T> column) {
-    var newColumn = new Column[]{column};
     return Dataframes.create(
-        of(columns, newColumn).flatMap(Arrays::stream).toArray(Column[]::new)
+        of(columns, new Column[]{column}).flatMap(Arrays::stream).toArray(Column[]::new)
     );
   }
 
-  public <T> Dataframe withColumn(String columnName, Supplier<T> supplier) {
-    var values = range(0, rows).boxed().map(num -> supplier.get()).collect(toList());
-    return addColumn(new Column<>(columnName, values));
+  public <T> Dataframe map(String columnName, Supplier<T> supplier) {
+    return mapTransform.map(columnName, supplier);
   }
 
-  public Dataframe withoutColumn(String... columnNames) {
-    var colList = List.of(columnNames);
-    return Dataframes.create(
-        stream(columns).filter(column -> !colList.contains(column.columnName()))
-            .toArray(Column[]::new)
-    );
+  @Override
+  public <S, T> Dataframe map(String columnName, Function<S, T> f, String sourceColumn) {
+    return mapTransform.map(columnName, f, sourceColumn);
   }
 
-  public <SOURCE, TARGET> Dataframe withColumn(String columnName, String sourceColumn,
-      Function<SOURCE, TARGET> transform) {
-    List<SOURCE> values = this.get(sourceColumn);
-    return addColumn(new Column<>(columnName, values.stream().map(transform).collect(toList())));
-  }
-
-  public <SOURCE1, SOURCE2, TARGET> Dataframe withColumn(
-      String columnName,
-      BiFunction<SOURCE1, SOURCE2, TARGET> transform,
+  public <S1, S2, T> Dataframe map(String columnName,
+      BiFunction<S1, S2, T> f,
       String sourceColumn1,
-      String sourceColumn2
-  ) {
-    List<SOURCE1> values1 = this.get(sourceColumn1);
-    List<SOURCE2> values2 = this.get(sourceColumn2);
-    var targetValues = range(0, values1.size()).parallel().boxed()
-        .map(index -> transform.apply(values1.get(index), values2.get(index)))
-        .collect(toList());
-    var newColumn = new Column[]{new Column<>(columnName, targetValues)};
-    return Dataframes.create(
-        of(columns, newColumn).flatMap(Arrays::stream).toArray(Column[]::new)
-    );
+      String sourceColumn2) {
+    return mapTransform.map(columnName, f, sourceColumn1, sourceColumn2);
+  }
+
+  public Dataframe mapWithout(String... columnNames) {
+    return mapTransform.mapWithout(columnNames);
   }
 
   public Dataframe oneHotEncode(String columnToEncode) {
-    var toEncodeColumnMap = data.get(columnToEncode).stream()
-        .distinct().sorted()
-        .map(colName -> new Column<Boolean>(colName.toString(), new ArrayList<>()))
-        .collect(toMap(Column::columnName, c -> c));
-
-    data.get(columnToEncode).parallelStream().map(Object::toString).forEachOrdered(colName -> {
-      var trueCol = toEncodeColumnMap.get(colName);
-      trueCol.values().add(true);
-      toEncodeColumnMap.keySet().parallelStream()
-          .map(toEncodeColumnMap::get)
-          .filter(not(trueCol::equals))
-          .forEachOrdered(column -> column.values().add(false));
-    });
-
-    var columnArray = toEncodeColumnMap.values().stream().sorted(comparing(Column::columnName))
-        .toArray(Column[]::new);
-    return Dataframes.create(
-        of(this.columns, columnArray).flatMap(Arrays::stream).toArray(Column[]::new)
-    );
+    return matrixTransform.oneHotEncode(columnToEncode);
   }
 
   public INDArray toVector(String columnName) {
-    double[] doubles = this.data.get(columnName).stream()
-        .parallel()
-        .mapToDouble(obj -> parseDouble(obj.toString())).toArray();
-    return Nd4j.create(doubles, doubles.length, 1);
+    return matrixTransform.toVector(columnName);
   }
 
   public INDArray toMatrix(String... columnNames) {
-    var colNameStream = columnNames.length == 0 ?
-        stream(this.columns).map(Column::values) :
-        of(columnNames).map(this::get);
-
-    var vectorList = colNameStream.parallel()
-        .map(List::stream)
-        .map(valueStream -> valueStream.mapToDouble(this::objectToDouble))
-        .map(DoubleStream::toArray)
-        .map(doubles -> Nd4j.create(doubles, doubles.length, 1))
-        .toArray(INDArray[]::new);
-    return Nd4j.concat(1, vectorList);
-  }
-
-  private Double objectToDouble(Object obj) {
-    if (obj instanceof Number number) {
-      return number.doubleValue();
-    } else if (obj instanceof Boolean b) {
-      return b ? 1.0D : 0.0D;
-    } else if (obj instanceof String s && s.trim().matches(NUMBER_REGEX)) {
-      return parseDouble(s.trim());
-    }
-    throw new IllegalArgumentException("Cannot cast " + obj + " to number");
+    return matrixTransform.toMatrix(columnNames);
   }
 
   public void show(int number) {
@@ -198,12 +123,20 @@ public class Dataframe {
     return List.copyOf((List<T>) data.get(column));
   }
 
-  public int getColumns() {
+  public int getColumnSize() {
     return columns.length;
+  }
+
+  public Column<?>[] getColumns() {
+    return columns;
   }
 
   public int getRows() {
     return rows;
+  }
+
+  public Map<String, List<?>> getData() {
+    return data;
   }
 }
 

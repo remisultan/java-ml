@@ -93,7 +93,7 @@ public class LogisticRegression extends GradientDescentRegression {
 
     @Override
     public Dataframe predict(Dataframe dataframe) {
-        var dataframeIntercept = dataframe.withColumn(INTERCEPT, () -> 1);
+        var dataframeIntercept = dataframe.map(INTERCEPT, () -> 1);
         var X = dataframeIntercept.toMatrix(predictorNames);
         var predictions = computeNullHypothesis(X, W);
         var predictionList = range(0, predictions.rows()).boxed()
@@ -113,8 +113,8 @@ public class LogisticRegression extends GradientDescentRegression {
     @Override
     public LogisticRegression train(Dataframe dataframe) {
         var df = dataframe
-                .withColumn(this.label, responseVariableName, obj -> obj.toString().equals(this.label) ? YES : NO)
-                .withColumn(INTERCEPT, () -> 1);
+                .map(this.label, obj -> obj.toString().equals(this.label) ? YES : NO, responseVariableName)
+                .map(INTERCEPT, () -> 1);
 
         X = df.toMatrix(predictorNames);
         XMean = X.mean(true, 1);
