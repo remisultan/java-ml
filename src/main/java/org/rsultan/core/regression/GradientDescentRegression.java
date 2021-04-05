@@ -68,7 +68,7 @@ public abstract class GradientDescentRegression extends AbstractRegression {
     protected abstract INDArray computeGradient();
 
     protected double computeAccuracy(INDArray X, INDArray W, INDArray Y) {
-        return LongStream.range(0, X.rows()).parallel()
+        return range(0, X.rows()).parallel()
                 .map(idx -> {
                     var xRow = Nd4j.create(X.getRow(idx).toDoubleVector(), 1, X.columns());
                     xRow = xRow.div(XMean);
