@@ -18,6 +18,7 @@ import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.factory.Nd4j;
 import org.rsultan.core.clustering.kmedoids.KMeans;
 import org.rsultan.core.clustering.kmedoids.KMedians;
+import org.rsultan.core.clustering.kmedoids.evaluation.KMedoidEvaluator;
 import org.rsultan.core.clustering.kmedoids.strategy.InitialisationStrategy;
 import org.rsultan.core.clustering.type.MedoidType;
 import org.rsultan.dataframe.Column;

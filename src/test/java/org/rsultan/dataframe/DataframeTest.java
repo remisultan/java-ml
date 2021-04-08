@@ -40,7 +40,7 @@ public class DataframeTest {
         of(new Column[]{new Column<>(null, 0, 2, 3, 4)}, NullPointerException.class),
         of(new Column<?>[]{new Column<>("c1", 1, 2), new Column<>("c2", 1, 2, 3)},
             IllegalArgumentException.class),
-        of(new Column<?>[]{new Column<>("c1", 1, "lat65"), new Column<>("c2", 1, 2, 3)},
+        of(new Column<?>[]{new Column<>("c1", 1, "lat65", 3), new Column<>("c2", 1, 2, 3)},
             IllegalArgumentException.class)
     );
   }
@@ -54,7 +54,7 @@ public class DataframeTest {
   public void must_load_dataframe_correctly_with_empty_dataframe() {
     var df = Dataframes.create();
     assertThat(df.getRows()).isEqualTo(0);
-    assertThat(df.getColumns()).isEqualTo(0);
+    assertThat(df.getColumnSize()).isEqualTo(0);
   }
 
   @Test
@@ -66,7 +66,7 @@ public class DataframeTest {
     var matrix = df.toMatrix("red", "green", "blue", "yellow");
 
     assertThat(df.getRows()).isEqualTo(4);
-    assertThat(df.getColumns()).isEqualTo(5);
+    assertThat(df.getColumnSize()).isEqualTo(5);
     assertThat(df.get("red")).containsExactly(true, false, false, false);
     assertThat(df.get("green")).containsExactly(false, true, false, false);
     assertThat(df.get("blue")).containsExactly(false, false, true, false);
@@ -85,7 +85,7 @@ public class DataframeTest {
     var dataframe = Dataframes.create(columns);
 
     assertThat(dataframe.getRows()).isEqualTo(expectedRows);
-    assertThat(dataframe.getColumns()).isEqualTo(expectedCols);
+    assertThat(dataframe.getColumnSize()).isEqualTo(expectedCols);
     var matrix = dataframe
         .toMatrix(Stream.of(columns).map(Column::columnName).toArray(String[]::new));
     range(0, columns.length).forEach(idx -> {
@@ -109,13 +109,17 @@ public class DataframeTest {
   @MethodSource("params_that_must_throw_exception_due_to_malformed_input")
   public void must_throw_exception_due_to_malformed_input(Column<?>[] columns,
       Class<? extends Exception> exceptionClass) {
-    assertThrows(exceptionClass, () -> Dataframes.create(columns).show(10));
+    assertThrows(exceptionClass, () -> {
+      Dataframe dataframe = Dataframes.create(columns);
+      dataframe.show(10);
+      dataframe.toMatrix();
+    });
   }
 
   @Test
   public void must_create_new_column() {
     var df = Dataframes.create(new Column<>("doubles", 1.0D, 2.0D, 3.0D, 4.0D, 5.0D));
-    df = df.withColumn("ones", () -> 1);
+    df = df.map("ones", () -> 1);
 
     assertThat(df.get("ones")).containsExactly(1, 1, 1, 1, 1);
   }
@@ -123,7 +127,7 @@ public class DataframeTest {
   @Test
   public void must_create_new_column_from_existing_one() {
     var df = Dataframes.create(new Column<>("doubles", 1.0D, 2.0D, 3.0D, 4.0D, 5.0D));
-    df = df.withColumn("exp", "doubles", Math::exp);
+    df = df.map("exp", Math::exp, "doubles");
 
     assertThat(df.get("exp"))
         .containsExactly(Math.exp(1.0D), Math.exp(2.0D), Math.exp(3.0D), Math.exp(4.0D),
@@ -136,7 +140,7 @@ public class DataframeTest {
         new Column<>("d1", 1.0D, 2.0D, 3.0D, 4.0D, 5.0D),
         new Column<>("d2", 1.0D, 2.0D, 3.0D, 4.0D, 5.0D)
     );
-    df = df.withColumn("square", (Double d1, Double d2) -> d1 * d2, "d1", "d2");
+    df = df.map("square", (Double d1, Double d2) -> d1 * d2, "d1", "d2");
 
     assertThat(df.get("square")).containsExactly(1.0D, 4.0D, 9.0D, 16.0D, 25.0D);
   }
@@ -173,9 +177,9 @@ public class DataframeTest {
         new Column<>("d1", 1.0D, 2.0D, 3.0D, 4.0D, 5.0D),
         new Column<>("d2", 1.0D, 5.0D, 7.0D, 9.0D, 11.0D)
     );
-    df = df.withoutColumn("d1");
+    df = df.mapWithout("d1");
 
-    assertThat(df.getColumns()).isEqualTo(1);
+    assertThat(df.getColumnSize()).isEqualTo(1);
     assertThat(df.get("d2")).containsExactly(1.0D, 5.0D, 7.0D, 9.0D, 11.0D);
   }
 

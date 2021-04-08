@@ -32,11 +32,12 @@ public abstract class KMedoids implements Clustering {
   protected final InitialisationStrategy initialisationStrategy;
 
   private INDArray centroids;
-  private INDArray D;
+  private INDArray distances;
   private INDArray X;
   private INDArray Xt;
   private Double loss;
   private INDArray cluster;
+  private INDArray WCSS;
 
   protected KMedoids(
       int k,
@@ -51,7 +52,6 @@ public abstract class KMedoids implements Clustering {
 
   @Override
   public KMedoids train(Dataframe dataframe) {
-    loss = null;
     X = dataframe.toMatrix();
     Xt = X.transpose();
     var medoidFactory = medoidType.getMedoidFactory();
@@ -61,8 +61,8 @@ public abstract class KMedoids implements Clustering {
         .filter(epoch -> ofNullable(loss).orElse(-1.0D) != 0.0D)
         .forEach(epoch -> {
           LOG.info("Epoch {}, Loss : {} for {}", epoch, loss, medoidType);
-          D = medoidFactory.computeDistance(centroids, X).transpose();
-          cluster = Nd4j.argMin(D, 1);
+          distances = medoidFactory.computeDistance(centroids, X).transpose();
+          cluster = Nd4j.argMin(distances, 1);
 
           var newMedoids = range(0, K).parallel().unordered()
               .mapToObj(k -> {
@@ -79,7 +79,7 @@ public abstract class KMedoids implements Clustering {
           loss = medoidFactory.computeNorm(centroids.sub(newCenters));
           centroids = newCenters;
         });
-
+    this.WCSS = distances.transpose().mmul(distances).sum().div(distances.rows());
     return this;
   }
 
@@ -90,7 +90,7 @@ public abstract class KMedoids implements Clustering {
     var distances = medoidFactory.computeDistance(centroids, Xpredict).transpose();
     var centers = LongStream.of(Nd4j.argMin(distances, 1).toLongVector()).boxed().collect(toList());
     return dataframe.addColumn(new Column<>("K", centers))
-        .<Long, INDArray>withColumn("prediction", "K", centroids::getRow);
+        .<Long, INDArray>map("prediction", centroids::getRow, "K");
   }
 
   private INDArray buildInitialCentroids(MedoidFactory medoidFactory) {
@@ -115,6 +115,10 @@ public abstract class KMedoids implements Clustering {
 
   public int getK() {
     return K;
+  }
+
+  public INDArray getWCSS() {
+    return WCSS;
   }
 
   public INDArray getCluster() {

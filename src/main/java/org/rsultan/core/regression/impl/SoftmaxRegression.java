@@ -57,7 +57,7 @@ public class SoftmaxRegression extends LogisticRegression {
 
     @Override
     public SoftmaxRegression train(Dataframe dataframe) {
-        var dataframeIntercept = dataframe.withColumn(INTERCEPT, () -> 1);
+        var dataframeIntercept = dataframe.map(INTERCEPT, () -> 1);
         X = dataframeIntercept.toMatrix(predictorNames);
         XMean = X.mean(true ,1);
         X = X.div(XMean);
