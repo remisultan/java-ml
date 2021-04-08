@@ -46,7 +46,8 @@ public class LinearRegressionTest {
             0.9920351982844714,
             new double[]{4.072386773691408, -5.460955300045582, 13.427152773172018},
             new double[]{0.027670010280800295, 0.9840326600175213, 0.002750470910569236},
-            new double[]{1.0253773106895072, 4.330824836127612, 13.615757854483908, 28.88017636575839, 50.124080369951066}),
+            new double[]{1.0253773106895072, 4.330824836127612, 13.615757854483908,
+                28.88017636575839, 50.124080369951066}),
         of("y",
             new String[]{"x", "x2", "x3"},
             new double[]{-8.170418390061572, 16.59195036587023, -10.47235921093084,
@@ -56,9 +57,16 @@ public class LinearRegressionTest {
             0.9997136493795736,
             new double[]{-5.010158649913984, 6.139000734969269, -8.380896856206233,
                 18.413660521274217},
-            new double[]{0.93729116849317, 0.051399003206532456, 0.9621983098931299, 0.017269651919306184},
-            new double[]{0.999522748967479, 7.526845370672824, 29.713649379592425, 85.86203468026427, 194.27410117722633})
+            new double[]{0.93729116849317, 0.051399003206532456, 0.9621983098931299,
+                0.017269651919306184},
+            new double[]{0.999522748967479, 7.526845370672824, 29.713649379592425,
+                85.86203468026427, 194.27410117722633})
     );
+  }
+
+  private static double round(double exponent, double value) {
+    var tenthPower = Math.pow(10, exponent);
+    return Math.round(value * tenthPower) / tenthPower;
   }
 
   @ParameterizedTest
@@ -84,8 +92,8 @@ public class LinearRegressionTest {
 
     assertThat(linearRegression.getW().toDoubleVector()).containsExactly(expectedBeta);
     assertThat(round(8, linearRegression.getMSE())).isEqualTo(round(8, expectedMSE));
-    assertThat(round(8,linearRegression.getRMSE())).isEqualTo(round(8,expectedRMSE));
-    assertThat(linearRegression.getR2()).isEqualTo(expectedR2);
+    assertThat(round(8, linearRegression.getRMSE())).isEqualTo(round(8, expectedRMSE));
+    assertThat(round(8, linearRegression.getR2())).isEqualTo(round(8, expectedR2));
     assertThat(linearRegression.gettValues().toDoubleVector()).containsExactly(expectedTValues);
     assertThat(linearRegression.getpValues().toDoubleVector()).containsExactly(expectedPValues);
 
@@ -93,10 +101,5 @@ public class LinearRegressionTest {
     assertThat(
         dfPredict.<Double>get("predictions").stream().mapToDouble(Double::doubleValue).toArray())
         .containsExactly(expectedPredictions);
-  }
-
-  private static double round(double exponent, double value){
-    var tenthPower = Math.pow(10, exponent);
-    return Math.round(value *  tenthPower) / tenthPower;
   }
 }
