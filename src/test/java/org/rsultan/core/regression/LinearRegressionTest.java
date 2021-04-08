@@ -83,8 +83,8 @@ public class LinearRegressionTest {
     linearRegression.showMetrics();
 
     assertThat(linearRegression.getW().toDoubleVector()).containsExactly(expectedBeta);
-    assertThat(linearRegression.getMSE()).isEqualTo(expectedMSE);
-    assertThat(linearRegression.getRMSE()).isEqualTo(expectedRMSE);
+    assertThat(round(8, linearRegression.getMSE())).isEqualTo(round(8, expectedMSE));
+    assertThat(round(8,linearRegression.getRMSE())).isEqualTo(round(8,expectedRMSE));
     assertThat(linearRegression.getR2()).isEqualTo(expectedR2);
     assertThat(linearRegression.gettValues().toDoubleVector()).containsExactly(expectedTValues);
     assertThat(linearRegression.getpValues().toDoubleVector()).containsExactly(expectedPValues);
@@ -93,5 +93,10 @@ public class LinearRegressionTest {
     assertThat(
         dfPredict.<Double>get("predictions").stream().mapToDouble(Double::doubleValue).toArray())
         .containsExactly(expectedPredictions);
+  }
+
+  private static double round(double exponent, double value){
+    var tenthPower = Math.pow(10, exponent);
+    return Math.round(value *  tenthPower) / tenthPower;
   }
 }
