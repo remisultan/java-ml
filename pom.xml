@@ -6,7 +6,7 @@
 
   <groupId>org.rsultan.example</groupId>
   <artifactId>nd4j-ml</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>1.0.0</version>
   <name>java-ml</name>
 
   <distributionManagement>
