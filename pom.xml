@@ -6,7 +6,7 @@
 
   <groupId>org.rsultan.example</groupId>
   <artifactId>nd4j-ml</artifactId>
-  <version>1.0</version>
+  <version>1.0-SNAPSHOT</version>
   <name>java-ml</name>
 
   <distributionManagement>
@@ -18,7 +18,7 @@
 
   <properties>
     <assertj-core.version>3.9.1</assertj-core.version>
-    <google-storage-wagon.version>2.3</google-storage-wagon.version>
+    <google-storage-wagon.version>1.0</google-storage-wagon.version>
     <java.version>15</java.version>
     <junit-jupiter.version>5.7.0</junit-jupiter.version>
     <nd4j.version>1.0.0-beta7</nd4j.version>
