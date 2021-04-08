@@ -5,8 +5,6 @@ import static java.util.stream.IntStream.rangeClosed;
 import static org.rsultan.core.clustering.type.MedoidType.MEAN;
 
 import java.util.ArrayList;
-import org.apache.commons.lang3.NotImplementedException;
-import org.rsultan.core.clustering.Clustering;
 import org.rsultan.core.clustering.kmedoids.KMeans;
 import org.rsultan.core.clustering.kmedoids.KMedians;
 import org.rsultan.core.clustering.type.MedoidType;

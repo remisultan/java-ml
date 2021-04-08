@@ -79,7 +79,6 @@ public class Dataframe implements MapTransform, FilterTransform, MatrixTransform
     return mapTransform.map(columnName, supplier);
   }
 
-  @Override
   public <S, T> Dataframe map(String columnName, Function<S, T> f, String sourceColumn) {
     return mapTransform.map(columnName, f, sourceColumn);
   }

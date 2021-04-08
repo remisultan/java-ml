@@ -6,12 +6,19 @@
 
   <groupId>org.rsultan.example</groupId>
   <artifactId>nd4j-ml</artifactId>
-  <version>1.0-SNAPSHOT</version>
-
+  <version>1.0</version>
   <name>java-ml</name>
+
+  <distributionManagement>
+    <repository>
+      <id>release.artifactory.rsultan.org</id>
+      <url>gs://artifactory.rsultan.org/release</url>
+    </repository>
+  </distributionManagement>
 
   <properties>
     <assertj-core.version>3.9.1</assertj-core.version>
+    <google-storage-wagon.version>2.3</google-storage-wagon.version>
     <java.version>15</java.version>
     <junit-jupiter.version>5.7.0</junit-jupiter.version>
     <nd4j.version>1.0.0-beta7</nd4j.version>
@@ -49,12 +56,6 @@
       <version>${slf4j-log4j12.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.univocity</groupId>
-      <artifactId>univocity-parsers</artifactId>
-      <version>${univocity-parsers.version}</version>
-    </dependency>
-
-    <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
       <version>${junit-jupiter.version}</version>
@@ -70,6 +71,13 @@
 
   <build>
     <finalName>java-ml</finalName>
+    <extensions>
+      <extension>
+        <groupId>com.gkatzioura.maven.cloud</groupId>
+        <artifactId>google-storage-wagon</artifactId>
+        <version>${google-storage-wagon.version}</version>
+      </extension>
+    </extensions>
     <testResources>
       <testResource>
         <directory>${project.basedir}/src/test/resources</directory>
