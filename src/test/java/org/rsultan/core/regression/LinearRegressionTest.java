@@ -82,7 +82,7 @@ public class LinearRegressionTest {
       double[] expectedPValues,
       double[] expectedPredictions
   ) throws IOException {
-    var dataframe = Dataframes.csv(getResourceFileName("org/rsultan/utils/example.csv"));
+    var dataframe = Dataframes.csv(getResourceFileName("org/rsultan/utils/example-linear-regression.csv"));
     var linearRegression = new LinearRegression()
         .setPredictorNames(predictors)
         .setResponseVariableName(responseVariable)
