@@ -30,7 +30,7 @@ public class PlusPlusStrategy implements InitialisationFactory {
       var probabilities = squaredDistances.div(squaredDistances.sum(true, 0));
       var cumulativeSumTheshold = probabilities.cumsum(0)
           .getWhere(nextDouble(0, 1), greaterThanOrEqual());
-      addNewCenters(X, centers, X.columns() - cumulativeSumTheshold.columns() + 1);
+      addNewCenters(X, centers, X.columns() - cumulativeSumTheshold.columns());
     }
     return C.columns() == 1 ? C.transpose() : C;
   }

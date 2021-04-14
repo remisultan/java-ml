@@ -19,7 +19,7 @@ import org.rsultan.dataframe.Dataframes;
 
 public class MatrixDataframe implements MatrixTransform {
 
-  private static final String NUMBER_REGEX = "^\\d+(\\.\\d+)*$";
+  private static final String NUMBER_REGEX = "^(-?\\d+(\\.\\d+)*)$";
   private final Dataframe dataframe;
 
   public MatrixDataframe(Dataframe dataframe) {

@@ -24,13 +24,15 @@ public class DataframeTest {
         of(new Column[]{new Column<>("Doubles", 0D, 1D, 2D, 3D, 4D)}, 5, 1),
         of(new Column[]{new Column<>("Floats", 0F, 1F, 2F, 3F, 4F)}, 5, 1),
         of(new Column[]{new Column<>("Strings", "1.1", "2.1", "3", "4.4", "5.3")}, 5, 1),
+        of(new Column[]{new Column<>("Negatives", "-1.1", "-2.1", "-3", "-4.4", "-5.3")}, 5, 1),
         of(new Column<?>[]{
             new Column<>("Integers", 0, 1, 2, 3, 4),
             new Column<>("Longs", 0L, 1L, 2L, 3L, 4L),
             new Column<>("Doubles", 0D, 1D, 2D, 3D, 4D),
             new Column<>("Floats", 0F, 1F, 2F, 3F, 4F),
-            new Column<>("Strings", "1.1", "2.1", "3", "4.4", "5.3")
-        }, 5, 5)
+            new Column<>("Strings", "1.1", "2.1", "3", "4.4", "5.3"),
+            new Column<>("Negatives", "-1.1", "-2.1", "-3", "-4.4", "-5.3")
+        }, 5, 6)
     );
   }
 
@@ -186,11 +188,11 @@ public class DataframeTest {
   @Test
   public void must_load_dataframe_from_csv() throws IOException {
     var df = Dataframes.csv(getResourceFileName("org/rsultan/utils/example.csv"));
-    assertThat(df.get("y")).containsExactly(1L, 2L, 3L, 4L, 5L);
-    assertThat(df.get("x")).containsExactly(1.0D, 2.0D, 3.0D, 4.0D, 5.0D);
-    assertThat(df.get("x2")).containsExactly(1L, 4L, 9L, 16L, 25L);
-    assertThat(df.get("x3")).containsExactly(1L, 8L, 27L, 64L, 125L);
-    assertThat(df.get("strColumn")).containsExactly("a", "b", "c", "d", "e");
+    assertThat(df.get("y")).containsExactly(1L, 2L, 3L, 4L, 5L, -6L);
+    assertThat(df.get("x")).containsExactly(1.0D, 2.0D, 3.0D, 4.0D, 5.0D, -5.0D);
+    assertThat(df.get("x2")).containsExactly(1L, 4L, 9L, 16L, 25L, -25L);
+    assertThat(df.get("x3")).containsExactly(1L, 8L, 27L, 64L, 125L, -125L);
+    assertThat(df.get("strColumn")).containsExactly("a", "b", "c", "d", "e", "f");
   }
 
   @Test
