@@ -21,10 +21,6 @@ public class KMedoidEvaluator {
   private final MedoidType medoidType;
   private final int epoch;
 
-  public KMedoidEvaluator(int minK, int maxK) {
-    this(minK, maxK, MEAN);
-  }
-
   public KMedoidEvaluator(int minK, int maxK, MedoidType medoidType) {
     this(minK, maxK, medoidType, 100);
   }

@@ -15,8 +15,8 @@ import static java.util.stream.IntStream.range;
 
 public class CSVUtils {
 
-    private static final Pattern DOUBLE_VALUE_REGEX = Pattern.compile("\\d+\\.\\d+");
-    private static final Pattern LONG_VALUE_REGEX = Pattern.compile("\\d+");
+    private static final Pattern DOUBLE_VALUE_REGEX = Pattern.compile("-?\\d+\\.\\d+");
+    private static final Pattern LONG_VALUE_REGEX = Pattern.compile("-?\\d+");
     public static final String HEADER_PREFIX = "c";
 
     private static Object getValueWithType(String value) {

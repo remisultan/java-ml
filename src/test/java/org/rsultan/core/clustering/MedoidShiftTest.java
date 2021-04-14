@@ -14,9 +14,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.factory.Nd4j;
-import org.rsultan.core.clustering.kmedoids.KMeans;
-import org.rsultan.core.clustering.kmedoids.KMedians;
-import org.rsultan.core.clustering.kmedoids.KMedoids;
 import org.rsultan.core.clustering.medoidshift.MeanShift;
 import org.rsultan.core.clustering.medoidshift.MedianShift;
 import org.rsultan.core.clustering.medoidshift.MedoidShift;
@@ -31,12 +28,12 @@ public class MedoidShiftTest {
 
   private static Stream<Arguments> params_that_must_apply_kmedoids() {
     return Stream.of(
-        Arguments.of(new MeanShift(60, 30)),
-        Arguments.of(new MeanShift(65, 30)),
-        Arguments.of(new MeanShift(70, 30)),
-        Arguments.of(new MedianShift(60, 30)),
-        Arguments.of(new MedianShift(65, 30)),
-        Arguments.of(new MedianShift(70, 30))
+        Arguments.of(new MeanShift(60D, 30)),
+        Arguments.of(new MeanShift(65D, 30)),
+        Arguments.of(new MeanShift(70D, 30)),
+        Arguments.of(new MedianShift(60D, 30)),
+        Arguments.of(new MedianShift(65D, 30)),
+        Arguments.of(new MedianShift(70D, 30))
     );
   }
 
@@ -50,9 +47,10 @@ public class MedoidShiftTest {
         new Column<>("c3", range(0, 20).boxed().map(idx -> nextFloat(0, 10)).collect(toList())),
         new Column<>("c4", range(0, 20).boxed().map(idx -> nextInt(0, 10)).collect(toList()))
     );
-    medoidShift.train(dataframe);
+    medoidShift = medoidShift.train(dataframe);
+    medoidShift.showMetrics();
 
-    assertThat(medoidShift.getC()).isNotNull();
+    assertThat(medoidShift.getCentroids()).isNotNull();
     assertThat(medoidShift.predict(dataframe)).isNotNull();
   }
 }

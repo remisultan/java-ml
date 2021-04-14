@@ -1,8 +1,8 @@
 package org.rsultan.core.clustering.medoidshift;
 
-
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.LongStream.range;
+import static java.util.stream.LongStream.rangeClosed;
 
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -12,17 +12,22 @@ import org.rsultan.core.clustering.Clustering;
 import org.rsultan.core.clustering.type.MedoidType;
 import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframe;
+import org.rsultan.dataframe.Dataframes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class MedoidShift implements Clustering {
 
+  private static final Logger LOG = LoggerFactory.getLogger(MedoidShift.class);
+
   private final MedoidType medoidType;
-  private final long bandwidth;
+  private final double bandwidth;
   private final long epoch;
 
-  private INDArray C;
+  private INDArray centroids;
   private INDArray Xt;
 
-  protected MedoidShift(long bandwidth, long epoch, MedoidType medoidType) {
+  protected MedoidShift(double bandwidth, long epoch, MedoidType medoidType) {
     this.medoidType = medoidType;
     this.epoch = epoch;
     this.bandwidth = bandwidth;
@@ -33,32 +38,30 @@ public abstract class MedoidShift implements Clustering {
     var medoidFactory = medoidType.getMedoidFactory();
     var isTerminated = new AtomicBoolean(false);
     Xt = dataframe.toMatrix().transpose();
-    C = Xt.dup();
+    centroids = Xt.dup();
     range(0, epoch)
         .filter(epoch -> !isTerminated.get())
         .forEach(epoch -> {
-          System.out.println("Epoch " + epoch);
-          var newCentroidList = range(0, C.columns())
+          LOG.info("Epoch : {}", epoch);
+          var newCentroidList = range(0, centroids.columns())
               .parallel().unordered()
               .mapToObj(col -> {
-                var centroid = C.getColumn(col);
+                var centroid = centroids.getColumn(col);
                 var range = epoch == 0 ? range(col, Xt.columns()) : range(0, Xt.columns());
                 return range.parallel().unordered().mapToObj(Xt::getColumn)
                     .filter(feature -> medoidFactory.computeNorm(feature.sub(centroid)) < bandwidth)
                     .collect(toList());
               })
-              .map(features -> Nd4j.create(features, features.size(), C.rows()))
+              .map(features -> Nd4j.create(features, features.size(), centroids.rows()))
               .map(medoidFactory::computeMedoids)
               .distinct()
               .collect(toList());
-          var newC = Nd4j.create(newCentroidList, newCentroidList.size(), C.rows())
+          var newC = Nd4j.create(newCentroidList, newCentroidList.size(), centroids.rows())
               .transpose();
-          if (C.equalShapes(newC) && C.equals(newC) || C.columns() == 1) {
+          if (centroids.equalShapes(newC) && centroids.equals(newC) || centroids.columns() == 1) {
             isTerminated.set(true);
           }
-          C = newC;
-          System.out.println(C);
-          System.out.println(Arrays.toString(C.shape()));
+          centroids = newC;
         });
 
     return this;
@@ -68,14 +71,23 @@ public abstract class MedoidShift implements Clustering {
   public Dataframe predict(Dataframe dataframe) {
     var medoidFactory = medoidType.getMedoidFactory();
     var Xpredict = dataframe.toMatrix();
-    var distances = medoidFactory.computeDistance(Xpredict, C.transpose());
+    var distances = medoidFactory.computeDistance(Xpredict, centroids.transpose());
     var indices = Nd4j.argMin(distances, 1);
-    var predictions = C.transpose().get(indices);
+    var predictions = centroids.transpose().get(indices);
     return dataframe.addColumn(new Column<>("predictions",
         range(0, predictions.rows()).mapToObj(predictions::getRow).collect(toList())));
   }
 
-  public INDArray getC() {
-    return C;
+
+  public void showMetrics() {
+    var centroids = range(0, this.centroids.columns()).boxed()
+        .map(idx -> Arrays.toString(this.centroids.getColumn(idx).toDoubleVector()))
+        .collect(toList());
+    var indices = new Column<>("K", rangeClosed(1, this.centroids.columns()).boxed().collect(toList()));
+    Dataframes.create(indices, new Column<>("centroids", centroids)).tail();
+  }
+
+  public INDArray getCentroids() {
+    return centroids;
   }
 }

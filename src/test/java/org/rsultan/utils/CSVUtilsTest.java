@@ -50,18 +50,18 @@ public class CSVUtilsTest {
     public void must_read_csv_and_return_columns() throws IOException {
         var columns = CSVUtils.read(getResourceFileName(EXAMPLE_CSV), ",", true);
 
-        assertThat(columns).hasSize(5);
+        assertThat(columns).hasSize((5));
 
         assertThat(columns[0].columnName()).isEqualTo("y");
-        assertThat((List<Long>) columns[0].values()).hasSize(5).containsExactly(1L, 2L, 3L, 4L, 5L);
+        assertThat((List<Long>) columns[0].values()).hasSize(6).containsExactly(1L, 2L, 3L, 4L, 5L, -6L);
         assertThat(columns[1].columnName()).isEqualTo("x");
-        assertThat((List<Double>) columns[1].values()).hasSize(5).containsExactly(1.0D, 2.0D, 3.0D, 4.0D, 5.0D);
+        assertThat((List<Double>) columns[1].values()).hasSize(6).containsExactly(1.0D, 2.0D, 3.0D, 4.0D, 5.0D, -5.0D);
         assertThat(columns[2].columnName()).isEqualTo("x2");
-        assertThat((List<Long>) columns[2].values()).hasSize(5).containsExactly(1L, 4L, 9L, 16L, 25L);
+        assertThat((List<Long>) columns[2].values()).hasSize(6).containsExactly(1L, 4L, 9L, 16L, 25L, -25L);
         assertThat(columns[3].columnName()).isEqualTo("x3");
-        assertThat((List<Long>) columns[3].values()).hasSize(5).containsExactly(1L, 8L, 27L, 64L, 125L);
+        assertThat((List<Long>) columns[3].values()).hasSize(6).containsExactly(1L, 8L, 27L, 64L, 125L, -125L);
         assertThat(columns[4].columnName()).isEqualTo("strColumn");
-        assertThat((List<String>) columns[4].values()).hasSize(5).containsExactly("a", "b", "c", "d", "e");
+        assertThat((List<String>) columns[4].values()).hasSize(6).containsExactly("a", "b", "c", "d", "e", "f");
 
     }
 
