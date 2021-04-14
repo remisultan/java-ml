@@ -1,20 +1,14 @@
 package org.rsultan.example;
 
-import static java.awt.image.BufferedImage.TYPE_INT_RGB;
-
 import java.awt.Color;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.IntStream;
 import javax.imageio.ImageIO;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.factory.Nd4j;
-import org.rsultan.core.clustering.kmedoids.KMeans;
-import org.rsultan.core.clustering.kmedoids.KMedians;
 import org.rsultan.core.clustering.medoidshift.MeanShift;
 import org.rsultan.core.clustering.medoidshift.MedianShift;
 import org.rsultan.dataframe.Column;
@@ -71,10 +65,10 @@ public class MedoidShiftExample {
     });
 
     var trainedMeanShift = futureMeanShift.get();
-    System.out.println("MeanShift Centroids : " + meanShift.getC());
+    System.out.println("MeanShift Centroids : " + meanShift.getCentroids());
 
     var trainedMedianShift = futureMedianShift.get();
-    System.out.println("MedianShift Centroids : " + medianShift.getC());
+    System.out.println("MedianShift Centroids : " + medianShift.getCentroids());
 
   }
 }
