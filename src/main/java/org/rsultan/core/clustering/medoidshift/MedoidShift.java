@@ -1,6 +1,5 @@
 package org.rsultan.core.clustering.medoidshift;
 
-
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.LongStream.range;
 import static java.util.stream.LongStream.rangeClosed;
@@ -22,13 +21,13 @@ public abstract class MedoidShift implements Clustering {
   private static final Logger LOG = LoggerFactory.getLogger(MedoidShift.class);
 
   private final MedoidType medoidType;
-  private final long bandwidth;
+  private final double bandwidth;
   private final long epoch;
 
   private INDArray centroids;
   private INDArray Xt;
 
-  protected MedoidShift(long bandwidth, long epoch, MedoidType medoidType) {
+  protected MedoidShift(double bandwidth, long epoch, MedoidType medoidType) {
     this.medoidType = medoidType;
     this.epoch = epoch;
     this.bandwidth = bandwidth;

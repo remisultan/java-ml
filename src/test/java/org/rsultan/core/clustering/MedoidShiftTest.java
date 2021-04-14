@@ -28,12 +28,12 @@ public class MedoidShiftTest {
 
   private static Stream<Arguments> params_that_must_apply_kmedoids() {
     return Stream.of(
-        Arguments.of(new MeanShift(60, 30)),
-        Arguments.of(new MeanShift(65, 30)),
-        Arguments.of(new MeanShift(70, 30)),
-        Arguments.of(new MedianShift(60, 30)),
-        Arguments.of(new MedianShift(65, 30)),
-        Arguments.of(new MedianShift(70, 30))
+        Arguments.of(new MeanShift(60D, 30)),
+        Arguments.of(new MeanShift(65D, 30)),
+        Arguments.of(new MeanShift(70D, 30)),
+        Arguments.of(new MedianShift(60D, 30)),
+        Arguments.of(new MedianShift(65D, 30)),
+        Arguments.of(new MedianShift(70D, 30))
     );
   }
 
@@ -52,6 +52,5 @@ public class MedoidShiftTest {
 
     assertThat(medoidShift.getCentroids()).isNotNull();
     assertThat(medoidShift.predict(dataframe)).isNotNull();
-
   }
 }

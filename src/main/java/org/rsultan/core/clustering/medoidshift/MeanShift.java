@@ -6,7 +6,7 @@ import org.rsultan.dataframe.Dataframe;
 
 public class MeanShift extends MedoidShift {
 
-  public MeanShift(long bandwidth, long epoch) {
+  public MeanShift(double bandwidth, long epoch) {
     super(bandwidth, epoch, MEAN);
   }
 
