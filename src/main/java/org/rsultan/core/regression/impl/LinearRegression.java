@@ -47,8 +47,6 @@ public class LinearRegression extends AbstractRegression {
     public LinearRegression train(Dataframe dataframe) {
         var dataframeIntercept = dataframe.map(INTERCEPT, () -> 1);
         X = dataframeIntercept.toMatrix(predictorNames);
-        XMean = X.mean(true, 1);
-        X = X.div(XMean);
         Xt = X.transpose();
         Y = dataframeIntercept.toVector(responseVariableName);
 
