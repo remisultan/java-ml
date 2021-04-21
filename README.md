@@ -3,6 +3,10 @@ This repo intends to implement Machine Learning algorithms with Java and https:/
 
 You can check for examples in this package: ``src/main/java/org/rsultan/example``
 
+## Requirements
+
+- JDK15+
+
 ## Getting started
 
 Clone the repo and execute this
