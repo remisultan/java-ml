@@ -55,12 +55,15 @@ public abstract class KMedoids implements Clustering {
     X = dataframe.toMatrix();
     Xt = X.transpose();
     var medoidFactory = medoidType.getMedoidFactory();
+
+    LOG.info("Initialising centroids");
     centroids = buildInitialCentroids(medoidFactory);
+    LOG.info("Centroids initialised");
 
     range(0, numberOfIterations)
         .filter(epoch -> ofNullable(loss).orElse(-1.0D) != 0.0D)
         .forEach(epoch -> {
-          LOG.info("Epoch {}, Loss : {} for {}", epoch, loss, medoidType);
+          LOG.info("Epoch {} {}", epoch, medoidType);
           distances = medoidFactory.computeDistance(centroids, X).transpose();
           cluster = Nd4j.argMin(distances, 1);
 
@@ -78,6 +81,7 @@ public abstract class KMedoids implements Clustering {
           var newCenters = Nd4j.create(newMedoids, K, Xt.rows());
           loss = medoidFactory.computeNorm(centroids.sub(newCenters));
           centroids = newCenters;
+          LOG.info("Epoch {}, Loss : {} for {}", epoch, loss, medoidType);
         });
     this.WCSS = distances.transpose().mmul(distances).sum().div(distances.rows());
     return this;

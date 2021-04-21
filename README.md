@@ -3,6 +3,10 @@ This repo intends to implement Machine Learning algorithms with Java and https:/
 
 You can check for examples in this package: ``src/main/java/org/rsultan/example``
 
+## Requirements
+
+- JDK15+
+
 ## Getting started
 
 Clone the repo and execute this
@@ -23,7 +27,7 @@ Then you can import this to your `pom.xml`
     </dependency>
 ```
 
-There is an existing artifactory today but I am not satisfied with how to make it public today.
+There is an existing artifactory but I am not satisfied with how to make it public today.
 There will be an artifactory in the future.
 
 Once your are good with this, you can go read the [wiki](https://github.com/remisultan/java-ml/wiki)
