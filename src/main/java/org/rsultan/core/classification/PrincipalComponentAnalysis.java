@@ -25,7 +25,6 @@ public class PrincipalComponentAnalysis implements Trainable<PrincipalComponentA
   private String responseVariable = "y";
   private INDArray X;
   private INDArray Xmean;
-  private INDArray covarianceMatrix;
   private INDArray eighenVectors;
   private INDArray predictions;
   private List<String> responseVariableData;
@@ -42,9 +41,8 @@ public class PrincipalComponentAnalysis implements Trainable<PrincipalComponentA
     Xmean = X.mean(0);
     X = X.sub(Xmean);
     LOG.info("computing covariance matrix");
-    covarianceMatrix = Matrices.covariance(X);
     LOG.info("computing eighenvectors");
-    eighenVectors = covarianceMatrix.dup();
+    eighenVectors = Matrices.covariance(X);
     var eighenValuesSorted = Nd4j
         .sortWithIndices(symmetricGeneralizedEigenvalues(eighenVectors), 1, true);
     eighenVectors = eighenVectors.get(eighenValuesSorted[0])
@@ -87,9 +85,5 @@ public class PrincipalComponentAnalysis implements Trainable<PrincipalComponentA
   public PrincipalComponentAnalysis setResponseVariable(String responseVariable) {
     this.responseVariable = responseVariable;
     return this;
-  }
-
-  public INDArray getCovarianceMatrix() {
-    return covarianceMatrix;
   }
 }
