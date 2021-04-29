@@ -59,7 +59,7 @@ public class LogisticRegressionTest {
                 .setRegularization(regularization)
                 .setLambda(0.1)
                 .setPredictionColumnName("predictions")
-                .setLabel(label);
+                .setChosenLabel(label);
         logisticRegression.setLossAccuracyOffset(10);
         logisticRegression.train(dataframe);
         logisticRegression.getHistory().tail();

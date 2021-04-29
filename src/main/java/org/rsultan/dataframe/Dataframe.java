@@ -51,10 +51,10 @@ public class Dataframe implements MapTransform, FilterTransform, MatrixTransform
   }
 
   public Dataframe select(String... columnNames) {
-    var colNameList = List.of(columnNames);
     return Dataframes.create(
-        of(columns)
-            .filter(column -> colNameList.contains(column.columnName())).toArray(Column[]::new)
+        stream(columnNames)
+            .map(colName -> new Column<>(colName, this.get(colName)))
+            .toArray(Column[]::new)
     );
   }
 

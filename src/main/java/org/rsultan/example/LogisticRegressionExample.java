@@ -30,7 +30,7 @@ public class LogisticRegressionExample {
                 .setLossAccuracyOffset(100)
                 .setRegularization(RIDGE)
                 .setLambda(0.019)
-                .setLabel("Iris-setosa")
+                .setChosenLabel("Iris-setosa")
                 .train(df);
         setosaRegression.getHistory().tail();
         setosaRegression.predict(testDf).show(1000);
@@ -38,7 +38,7 @@ public class LogisticRegressionExample {
         var versicolorRegression = new LogisticRegression(1000, 0.1)
                 .setResponseVariableName("c4")
                 .setPredictorNames("c0", "c1", "c2", "c3")
-                .setLabel("Iris-versicolor")
+                .setChosenLabel("Iris-versicolor")
                 .setLossAccuracyOffset(100)
                 .train(df);
         versicolorRegression.getHistory().tail();
@@ -47,7 +47,7 @@ public class LogisticRegressionExample {
         var virginicaRegression = new LogisticRegression(1000, 0.1)
                 .setResponseVariableName("c4")
                 .setPredictorNames("c0", "c1", "c2", "c3")
-                .setLabel("Iris-virginica")
+                .setChosenLabel("Iris-virginica")
                 .setRegularization(LASSO)
                 .setLambda(0.0015)
                 .setLossAccuracyOffset(100)

@@ -1,16 +1,14 @@
 package org.rsultan.dataframe.transform.matrix;
 
 import static java.lang.Double.parseDouble;
-import static java.util.Arrays.stream;
 import static java.util.Comparator.comparing;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.IntStream.range;
 import static java.util.stream.Stream.of;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.stream.DoubleStream;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.rsultan.dataframe.Column;
@@ -34,17 +32,19 @@ public class MatrixDataframe implements MatrixTransform {
   }
 
   public INDArray toMatrix(String... columnNames) {
-    var colNameStream = columnNames.length == 0 ?
-        stream(this.dataframe.getColumns()).map(Column::values) :
-        of(columnNames).map(this.dataframe::get);
+    final Dataframe df = columnNames.length != 0 ? dataframe.select(columnNames) : dataframe;
+    int[] shape = {df.getRows(), df.getColumnSize()};
+    var matrix = Nd4j.zeros(shape);
 
-    var vectorList = colNameStream.parallel()
-        .map(List::stream)
-        .map(valueStream -> valueStream.mapToDouble(this::objectToDouble))
-        .map(DoubleStream::toArray)
-        .map(doubles -> Nd4j.create(doubles, doubles.length, 1))
-        .toArray(INDArray[]::new);
-    return Nd4j.concat(1, vectorList);
+    range(0, matrix.rows()).forEach(rowIdx ->
+        range(0, matrix.columns()).forEach(coldIdx -> {
+          var column = df.getColumns()[coldIdx];
+          Double value = objectToDouble(column.values().get(rowIdx));
+          matrix.put(rowIdx, coldIdx, value);
+        })
+    );
+
+    return matrix;
   }
 
   @Override
