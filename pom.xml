@@ -46,6 +46,11 @@
       <version>${nd4j.version}</version>
     </dependency>
     <dependency>
+      <groupId>com.univocity</groupId>
+      <artifactId>univocity-parsers</artifactId>
+      <version>2.1.1</version>
+    </dependency>
+    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
       <version>${slf4j-log4j12.version}</version>
@@ -66,6 +71,12 @@
       <artifactId>assertj-core</artifactId>
       <version>${assertj-core.version}</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-params</artifactId>
+      <version>5.7.0</version>
+      <scope>compile</scope>
     </dependency>
   </dependencies>
 

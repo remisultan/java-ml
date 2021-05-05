@@ -4,6 +4,7 @@ import static java.util.stream.IntStream.range;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.Arguments.of;
+import static org.rsultan.utils.TestUtils.getResourceFileName;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,11 +46,6 @@ public class DataframeTest {
         of(new Column<?>[]{new Column<>("c1", 1, "lat65", 3), new Column<>("c2", 1, 2, 3)},
             IllegalArgumentException.class)
     );
-  }
-
-  public static String getResourceFileName(String resourcePath) {
-    var classLoader = CSVUtilsTest.class.getClassLoader();
-    return new File(classLoader.getResource(resourcePath).getFile()).toString();
   }
 
   @Test
@@ -198,7 +194,7 @@ public class DataframeTest {
   @Test
   public void must_load_dataframe_from_csv_with_no_header() throws IOException {
     var df = Dataframes
-        .csv(getResourceFileName("org/rsultan/utils/example_no_header.csv"), ",", false);
+        .csv(getResourceFileName("org/rsultan/utils/example_no_header.csv"), ",", "\"", false);
     assertThat(df.get("c0")).containsExactly(1L, 2L, 3L, 4L, 5L);
     assertThat(df.get("c1")).containsExactly(1.0D, 2.0D, 3.0D, 4.0D, 5.0D);
     assertThat(df.get("c2")).containsExactly(1L, 4L, 9L, 16L, 25L);
