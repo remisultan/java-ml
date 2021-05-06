@@ -1,6 +1,5 @@
-package org.rsultan.core.classification;
+package org.rsultan.core.dimred;
 
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.DoubleStream.of;
 import static java.util.stream.IntStream.range;
 import static org.nd4j.linalg.eigen.Eigen.symmetricGeneralizedEigenvalues;
