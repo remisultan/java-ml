@@ -1,6 +1,5 @@
 package org.rsultan.utils;
 
-import static java.lang.String.format;
 import static java.util.Collections.singletonList;
 import static java.util.stream.IntStream.range;
 import static java.util.stream.Stream.iterate;
@@ -12,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 import org.junit.jupiter.params.shadow.com.univocity.parsers.csv.CsvFormat;
 import org.junit.jupiter.params.shadow.com.univocity.parsers.csv.CsvParser;
 import org.junit.jupiter.params.shadow.com.univocity.parsers.csv.CsvParserSettings;
@@ -43,17 +41,16 @@ public class CSVUtils {
     parser.beginParsing(path.toFile());
 
     var reader = Files.newBufferedReader(path);
-    var firstLine = parser.parseNext();
+    String[] firstLine = parser.parseNext();
     var columns = range(0, firstLine.length).boxed()
         .map(buildColumnHeaderName(withHeader, firstLine))
         .toArray(Column[]::new);
 
-    iterate(0, i -> i + 1).map(i -> parser.parseNext())
+    iterate(0, i -> i + 1).map(i -> (i == 0 && !withHeader) ?  firstLine : parser.parseNext())
         .takeWhile(Objects::nonNull)
         .forEach(lineArray ->
-            range(0, firstLine.length).forEach(index -> {
-              String value = removeEnclosuresIfExist(enclosure, lineArray[index]);
-              var typedValue = getValueWithType(value);
+            range(0, lineArray.length).forEach(index -> {
+              var typedValue = getValueWithType(lineArray[index]);
               columns[index].values().add(typedValue);
             }));
     reader.close();
@@ -77,10 +74,5 @@ public class CSVUtils {
           new Column<>(HEADER_PREFIX.concat(index.toString()),
               new ArrayList<>(singletonList((getValueWithType(firstLineCell)))));
     };
-  }
-
-  private static String removeEnclosuresIfExist(String enclosure, String value) {
-    String regex = "^" + enclosure + "+|" + enclosure + "+$";
-    return value.trim().replaceAll(regex, "");
   }
 }
