@@ -4,6 +4,8 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 
 public interface ImpurityService {
 
-  INDArray compute(INDArray labels);
+  INDArray compute(INDArray probabilities);
+
+  INDArray getClassCount(INDArray labels);
 
 }

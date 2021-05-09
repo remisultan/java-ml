@@ -46,7 +46,7 @@ public class CSVUtils {
         .map(buildColumnHeaderName(withHeader, firstLine))
         .toArray(Column[]::new);
 
-    iterate(0, i -> i + 1).map(i -> (i == 0 && !withHeader) ?  firstLine : parser.parseNext())
+    iterate(0, i -> i + 1).map(i -> parser.parseNext())
         .takeWhile(Objects::nonNull)
         .forEach(lineArray ->
             range(0, lineArray.length).forEach(index -> {

@@ -13,12 +13,12 @@ public abstract class ModelParameters<T> {
     return (T) this;
   }
 
-  protected T setPredictionColumnName(String name) {
+  public T setPredictionColumnName(String name) {
     this.predictionColumnName = name;
     return (T) this;
   }
 
-  protected T setPredictorNames(String... names) {
+  public T setPredictorNames(String... names) {
     this.predictorNames = Stream.of(names).distinct().toArray(String[]::new);
     return (T) this;
   }

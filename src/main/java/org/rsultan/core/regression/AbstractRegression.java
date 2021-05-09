@@ -17,7 +17,7 @@ public abstract class AbstractRegression
   protected INDArray Y;
   protected INDArray W;
 
-  protected Regression setPredictorNames(String... names) {
+  public Regression setPredictorNames(String... names) {
     String[] strings = {INTERCEPT};
     String[] predictorNames = Stream.of(strings, names)
         .flatMap(Arrays::stream).distinct()
