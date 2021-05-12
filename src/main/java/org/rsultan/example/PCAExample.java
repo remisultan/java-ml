@@ -9,6 +9,9 @@ import org.rsultan.dataframe.Dataframes;
 
 public class PCAExample {
 
+  /*
+    You can use the iris dataset --> args[0]
+   */
   static {
     Nd4j.setDefaultDataTypes(DataType.DOUBLE, DataType.DOUBLE);
   }

@@ -60,8 +60,11 @@ public class CSVUtils {
   private static CsvParser getParser(String separator, String enclosure) {
     CsvParserSettings settings = new CsvParserSettings();
     CsvFormat format = settings.getFormat();
-    format.setQuote(enclosure.toCharArray()[0]);
+    if (enclosure != null) {
+      format.setQuote(enclosure.toCharArray()[0]);
+    }
     format.setDelimiter(separator);
+    format.setLineSeparator("\n");
     return new CsvParser(settings);
   }
 
