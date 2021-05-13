@@ -13,8 +13,7 @@ public class RmseService extends AbstractImpurityService {
 
   @Override
   public INDArray compute(INDArray Y) {
-    var probabilities = computeProbabilities(Y);
     var mse = pow(Y.sub(Y.mean()), 2).sum(true, 1).div(Y.columns());
-    return sqrt(probabilities.mul(mse).sum());
+    return sqrt(mse);
   }
 }

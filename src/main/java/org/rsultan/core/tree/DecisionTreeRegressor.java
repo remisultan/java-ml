@@ -1,6 +1,6 @@
 package org.rsultan.core.tree;
 
-import static org.rsultan.core.tree.impurity.ImpurityStrategy.VARIANCE;
+import static org.rsultan.core.tree.impurity.ImpurityStrategy.RMSE;
 
 import java.util.List;
 import java.util.UUID;
@@ -11,7 +11,7 @@ import org.rsultan.dataframe.Dataframe;
 public class DecisionTreeRegressor extends DecisionTreeLearning {
 
   public DecisionTreeRegressor(int depth) {
-    super(depth, VARIANCE);
+    super(depth, RMSE);
   }
 
   @Override
