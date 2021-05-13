@@ -7,7 +7,6 @@ import static java.util.stream.IntStream.range;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -40,7 +39,7 @@ public abstract class DecisionTreeLearning
   protected ImpurityService impurityService;
 
   public DecisionTreeLearning(int depth, ImpurityStrategy strategy) {
-    this.depth = depth;
+    this.depth = depth > 0 ? depth : 1;
     this.strategy = strategy;
   }
 

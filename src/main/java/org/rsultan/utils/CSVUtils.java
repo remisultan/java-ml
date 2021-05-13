@@ -1,6 +1,10 @@
 package org.rsultan.utils;
 
+import static java.lang.String.format;
 import static java.util.Collections.singletonList;
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+import static java.util.regex.Pattern.compile;
 import static java.util.stream.IntStream.range;
 import static java.util.stream.Stream.iterate;
 
@@ -18,8 +22,11 @@ import org.rsultan.dataframe.Column;
 
 public class CSVUtils {
 
-  private static final Pattern DOUBLE_VALUE_REGEX = Pattern.compile("-?\\d+\\.\\d+");
-  private static final Pattern LONG_VALUE_REGEX = Pattern.compile("-?\\d+");
+  public static final String COLUMN_VALUE_GROUP_NAME = "columnValue";
+  public static final String TRIM_ENCLOSURE_PATTERN =
+      "^%s*(?<" + COLUMN_VALUE_GROUP_NAME + ">[^%s]+.+[^%s]+|[^%s]{0,2})%s*$";
+  private static final Pattern DOUBLE_VALUE_REGEX = compile("-?\\d+\\.\\d+");
+  private static final Pattern LONG_VALUE_REGEX = compile("-?\\d+");
   private static final String HEADER_PREFIX = "c";
 
   private static Object getValueWithType(String value) {
@@ -41,6 +48,10 @@ public class CSVUtils {
     parser.beginParsing(path.toFile());
 
     var reader = Files.newBufferedReader(path);
+    var enclosurePattern =
+        isNull(enclosure) ? null
+            : compile(format(TRIM_ENCLOSURE_PATTERN, enclosure, enclosure, enclosure, enclosure,
+                enclosure));
     String[] firstLine = parser.parseNext();
     var columns = range(0, firstLine.length).boxed()
         .map(buildColumnHeaderName(withHeader, firstLine))
@@ -50,11 +61,22 @@ public class CSVUtils {
         .takeWhile(Objects::nonNull)
         .forEach(lineArray ->
             range(0, lineArray.length).forEach(index -> {
-              var typedValue = getValueWithType(lineArray[index]);
+              String value = trimEnclosures(lineArray[index], enclosurePattern);
+              var typedValue = getValueWithType(value);
               columns[index].values().add(typedValue);
             }));
     reader.close();
     return columns;
+  }
+
+  private static String trimEnclosures(String columnValue, Pattern enclosureRegex) {
+    if (nonNull(enclosureRegex)) {
+      var matcher = enclosureRegex.matcher(columnValue);
+      if (matcher.matches()) {
+        return matcher.group(COLUMN_VALUE_GROUP_NAME);
+      }
+    }
+    return columnValue;
   }
 
   private static CsvParser getParser(String separator, String enclosure) {

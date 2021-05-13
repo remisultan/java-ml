@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.Arguments.of;
 import static org.rsultan.utils.TestUtils.getResourceFileName;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
@@ -25,14 +24,12 @@ public class CSVUtilsTest {
     return Stream.of(
         of(null, null, null, false, NullPointerException.class),
         of(null, null, null, true, NullPointerException.class),
-        of(UUID.randomUUID().toString(), null, null, false, NullPointerException.class),
-        of(UUID.randomUUID().toString(), null, null, true, NullPointerException.class),
+        of(UUID.randomUUID().toString(), null, null, false, IllegalArgumentException.class),
+        of(UUID.randomUUID().toString(), null, null, true, IllegalArgumentException.class),
         of(getResourceFileName(MALFORMED_EXAMPLED_CSV), null, null, false,
-            NullPointerException.class),
-        of(getResourceFileName(MALFORMED_EXAMPLED_CSV), "\"", null, false,
             IllegalArgumentException.class),
-        of(getResourceFileName(MALFORMED_EXAMPLED_CSV), "\"", ",", false,
-            ArrayIndexOutOfBoundsException.class)
+        of(getResourceFileName(MALFORMED_EXAMPLED_CSV), "\"", null, false,
+            IllegalArgumentException.class)
     );
   }
 
@@ -72,7 +69,7 @@ public class CSVUtilsTest {
 
   @Test
   public void must_read_csv_with_no_header_and_return_columns() throws IOException {
-    var columns = CSVUtils.read(getResourceFileName(EXAMPLE_CSV_NO_HEADER), ",", "\"",false);
+    var columns = CSVUtils.read(getResourceFileName(EXAMPLE_CSV_NO_HEADER), ",", "\"", false);
 
     assertThat(columns).hasSize(5);
 
