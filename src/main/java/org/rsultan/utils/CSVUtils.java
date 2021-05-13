@@ -2,6 +2,9 @@ package org.rsultan.utils;
 
 import static java.lang.String.format;
 import static java.util.Collections.singletonList;
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+import static java.util.regex.Pattern.compile;
 import static java.util.stream.IntStream.range;
 import static java.util.stream.Stream.iterate;
 
@@ -12,7 +15,6 @@ import java.util.ArrayList;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 import org.junit.jupiter.params.shadow.com.univocity.parsers.csv.CsvFormat;
 import org.junit.jupiter.params.shadow.com.univocity.parsers.csv.CsvParser;
 import org.junit.jupiter.params.shadow.com.univocity.parsers.csv.CsvParserSettings;
@@ -20,8 +22,11 @@ import org.rsultan.dataframe.Column;
 
 public class CSVUtils {
 
-  private static final Pattern DOUBLE_VALUE_REGEX = Pattern.compile("-?\\d+\\.\\d+");
-  private static final Pattern LONG_VALUE_REGEX = Pattern.compile("-?\\d+");
+  public static final String COLUMN_VALUE_GROUP_NAME = "columnValue";
+  public static final String TRIM_ENCLOSURE_PATTERN =
+      "^%s*(?<" + COLUMN_VALUE_GROUP_NAME + ">[^%s]+.+[^%s]+|[^%s]{0,2})%s*$";
+  private static final Pattern DOUBLE_VALUE_REGEX = compile("-?\\d+\\.\\d+");
+  private static final Pattern LONG_VALUE_REGEX = compile("-?\\d+");
   private static final String HEADER_PREFIX = "c";
 
   private static Object getValueWithType(String value) {
@@ -43,7 +48,11 @@ public class CSVUtils {
     parser.beginParsing(path.toFile());
 
     var reader = Files.newBufferedReader(path);
-    var firstLine = parser.parseNext();
+    var enclosurePattern =
+        isNull(enclosure) ? null
+            : compile(format(TRIM_ENCLOSURE_PATTERN, enclosure, enclosure, enclosure, enclosure,
+                enclosure));
+    String[] firstLine = parser.parseNext();
     var columns = range(0, firstLine.length).boxed()
         .map(buildColumnHeaderName(withHeader, firstLine))
         .toArray(Column[]::new);
@@ -51,8 +60,8 @@ public class CSVUtils {
     iterate(0, i -> i + 1).map(i -> parser.parseNext())
         .takeWhile(Objects::nonNull)
         .forEach(lineArray ->
-            range(0, firstLine.length).forEach(index -> {
-              String value = removeEnclosuresIfExist(enclosure, lineArray[index]);
+            range(0, lineArray.length).forEach(index -> {
+              String value = trimEnclosures(lineArray[index], enclosurePattern);
               var typedValue = getValueWithType(value);
               columns[index].values().add(typedValue);
             }));
@@ -60,11 +69,24 @@ public class CSVUtils {
     return columns;
   }
 
+  private static String trimEnclosures(String columnValue, Pattern enclosureRegex) {
+    if (nonNull(enclosureRegex)) {
+      var matcher = enclosureRegex.matcher(columnValue);
+      if (matcher.matches()) {
+        return matcher.group(COLUMN_VALUE_GROUP_NAME);
+      }
+    }
+    return columnValue;
+  }
+
   private static CsvParser getParser(String separator, String enclosure) {
     CsvParserSettings settings = new CsvParserSettings();
     CsvFormat format = settings.getFormat();
-    format.setQuote(enclosure.toCharArray()[0]);
+    if (enclosure != null) {
+      format.setQuote(enclosure.toCharArray()[0]);
+    }
     format.setDelimiter(separator);
+    format.setLineSeparator("\n");
     return new CsvParser(settings);
   }
 
@@ -77,10 +99,5 @@ public class CSVUtils {
           new Column<>(HEADER_PREFIX.concat(index.toString()),
               new ArrayList<>(singletonList((getValueWithType(firstLineCell)))));
     };
-  }
-
-  private static String removeEnclosuresIfExist(String enclosure, String value) {
-    String regex = "^" + enclosure + "+|" + enclosure + "+$";
-    return value.trim().replaceAll(regex, "");
   }
 }

@@ -4,11 +4,14 @@ import java.io.IOException;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.ops.transforms.Transforms;
-import org.rsultan.core.classification.PrincipalComponentAnalysis;
+import org.rsultan.core.dimred.PrincipalComponentAnalysis;
 import org.rsultan.dataframe.Dataframes;
 
 public class PCAExample {
 
+  /*
+    You can use the iris dataset --> args[0]
+   */
   static {
     Nd4j.setDefaultDataTypes(DataType.DOUBLE, DataType.DOUBLE);
   }

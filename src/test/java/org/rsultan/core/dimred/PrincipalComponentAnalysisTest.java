@@ -1,4 +1,4 @@
-package org.rsultan.core.classification;
+package org.rsultan.core.dimred;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.nd4j.linalg.ops.transforms.Transforms.cosineSim;
