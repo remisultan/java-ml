@@ -36,7 +36,8 @@ public class DecisionTreeClassifier extends DecisionTreeLearning {
 
   @Override
   protected Integer computePredictedResponse(INDArray array) {
-    return argMax(array).getInt(0, 0);
+    var classCount = impurityService.getClassCount(array);
+    return argMax(classCount).getInt(0, 0);
   }
 
   @Override
