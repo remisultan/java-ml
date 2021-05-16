@@ -87,11 +87,10 @@ public abstract class DecisionTreeLearning
     if (currentDepth < 0) {
       return null;
     }
-    var classCount = impurityService.getClassCount(response);
     LOG.info("Sorting labels per features");
     var sortedLabels = getSortedLabelsPerFeature(features, response);
     LOG.info("Computing best split");
-    var gain = getBestSplit(classCount, sortedLabels.get(0), sortedLabels.get(1));
+    var gain = getBestSplit(response, sortedLabels.get(0), sortedLabels.get(1));
     var leftNode = buildLeftNode(features, response, currentDepth, gain);
     var rightNode = buildRightNode(features, response, currentDepth, gain);
     var node = new Node(
@@ -125,8 +124,9 @@ public abstract class DecisionTreeLearning
     );
   }
 
-  protected BestSplit getBestSplit(INDArray classCount, INDArray sortedFeatures,
+  protected BestSplit getBestSplit(INDArray response, INDArray sortedFeatures,
       INDArray sortedLabels) {
+    var classCount = impurityService.getClassCount(response);
     final double maxRows = sortedLabels.rows();
     var bestSplit = new BestSplit(0, 0, impurityService.compute(classCount).getDouble(0, 0));
     for (int featureIdx = 0; featureIdx < sortedFeatures.columns(); featureIdx++) {

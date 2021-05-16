@@ -31,7 +31,6 @@ public class DecisionTreeRegressor extends DecisionTreeLearning {
 
   @Override
   protected INDArray buildY(Dataframe dataframe) {
-    var columnTemp = UUID.randomUUID().toString();
     return dataframe.toMatrix(responseVariableName);
   }
 }
