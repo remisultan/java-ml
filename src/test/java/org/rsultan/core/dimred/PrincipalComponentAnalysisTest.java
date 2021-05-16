@@ -41,10 +41,10 @@ public class PrincipalComponentAnalysisTest {
     var reconstruct = pca.reconstruct();
 
     assertThat(predictions.getColumnSize()).isEqualTo(expectedColumns);
-    assertThat(predictions.getRows()).isEqualTo(df.getRows());
+    assertThat(predictions.getRowSize()).isEqualTo(df.getRowSize());
 
     assertThat(reconstruct.getColumnSize()).isEqualTo(df.getColumnSize());
-    assertThat(reconstruct.getRows()).isEqualTo(df.getRows());
+    assertThat(reconstruct.getRowSize()).isEqualTo(df.getRowSize());
 
     assertThat(cosineSim(reconstruct.mapWithout("strColumn").toMatrix(),
         df.mapWithout("strColumn").toMatrix())).isLessThanOrEqualTo(reconstructSimilarity);

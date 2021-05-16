@@ -71,7 +71,7 @@ public abstract class DecisionTreeLearning
   @Override
   public Dataframe predict(Dataframe dataframe) {
     var predictions = new Column<>(predictionColumnName, new ArrayList<>());
-    range(0, dataframe.getRows()).mapToObj(row -> {
+    range(0, dataframe.getRowSize()).mapToObj(row -> {
       var node = tree;
       while (nonNull(node.left())) {
         var featureName = featuresNames.get(node.feature());

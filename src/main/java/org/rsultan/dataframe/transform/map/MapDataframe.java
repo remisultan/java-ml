@@ -14,17 +14,11 @@ import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframe;
 import org.rsultan.dataframe.Dataframes;
 
-public class MapDataframe implements MapTransform {
-
-  private final Dataframe dataframe;
-
-  public MapDataframe(Dataframe dataframe) {
-    this.dataframe = dataframe;
-  }
+public record MapDataframe(Dataframe dataframe) implements MapTransform {
 
   @Override
   public <T> Dataframe map(String columnName, Supplier<T> supplier) {
-    var values = range(0, this.dataframe.getRows()).boxed()
+    var values = range(0, this.dataframe.getRowSize()).boxed()
         .map(num -> supplier.get())
         .collect(toList());
     return this.dataframe.addColumn(new Column<>(columnName, values));
@@ -34,7 +28,7 @@ public class MapDataframe implements MapTransform {
   public <S, T> Dataframe map(String columnName, Function<S, T> f, String sourceColumn) {
     List<S> values = this.dataframe.get(sourceColumn);
     Column<T> newColumn = new Column<>(columnName, values.stream().map(f).collect(toList()));
-    return  this.dataframe.addColumn(newColumn);
+    return this.dataframe.addColumn(newColumn);
   }
 
   @Override

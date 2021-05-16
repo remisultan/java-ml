@@ -8,7 +8,6 @@ public enum ImpurityStrategy {
       case ENTROPY -> new EntropyService(totalLabels);
       case GINI -> new GiniService(totalLabels);
       case RMSE -> new RmseService(totalLabels);
-      default -> throw new IllegalStateException("Unexpected value: " + this);
     };
   }
 }

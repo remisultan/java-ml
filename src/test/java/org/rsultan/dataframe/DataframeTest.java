@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.Arguments.of;
 import static org.rsultan.utils.TestUtils.getResourceFileName;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Stream;
@@ -14,7 +13,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.rsultan.utils.CSVUtilsTest;
 
 public class DataframeTest {
 
@@ -51,7 +49,7 @@ public class DataframeTest {
   @Test
   public void must_load_dataframe_correctly_with_empty_dataframe() {
     var df = Dataframes.create();
-    assertThat(df.getRows()).isEqualTo(0);
+    assertThat(df.getRowSize()).isEqualTo(0);
     assertThat(df.getColumnSize()).isEqualTo(0);
   }
 
@@ -63,7 +61,7 @@ public class DataframeTest {
 
     var matrix = df.toMatrix("red", "green", "blue", "yellow");
 
-    assertThat(df.getRows()).isEqualTo(4);
+    assertThat(df.getRowSize()).isEqualTo(4);
     assertThat(df.getColumnSize()).isEqualTo(5);
     assertThat(df.get("red")).containsExactly(true, false, false, false);
     assertThat(df.get("green")).containsExactly(false, true, false, false);
@@ -82,7 +80,7 @@ public class DataframeTest {
       int expectedCols) {
     var dataframe = Dataframes.create(columns);
 
-    assertThat(dataframe.getRows()).isEqualTo(expectedRows);
+    assertThat(dataframe.getRowSize()).isEqualTo(expectedRows);
     assertThat(dataframe.getColumnSize()).isEqualTo(expectedCols);
     var matrix = dataframe
         .toMatrix(Stream.of(columns).map(Column::columnName).toArray(String[]::new));
@@ -151,7 +149,7 @@ public class DataframeTest {
     );
     df = df.filter("d1", (Double d1) -> d1 % 2 == 0);
 
-    assertThat(df.getRows()).isEqualTo(2);
+    assertThat(df.getRowSize()).isEqualTo(2);
     assertThat(df.get("d1")).containsExactly(2.0D, 4.0D);
     assertThat(df.get("d2")).containsExactly(5.0D, 9.0D);
   }
@@ -164,7 +162,7 @@ public class DataframeTest {
     );
     df = df.filter("d1", "d2", (Double d1, Double d2) -> d1 * d2 > 20D);
 
-    assertThat(df.getRows()).isEqualTo(3);
+    assertThat(df.getRowSize()).isEqualTo(3);
     assertThat(df.get("d1")).containsExactly(3.0D, 4.0, 5.0D);
     assertThat(df.get("d2")).containsExactly(7.0D, 9.0D, 11.0D);
   }

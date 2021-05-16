@@ -11,13 +11,7 @@ import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframe;
 import org.rsultan.dataframe.Dataframes;
 
-public class FilterDataframe implements FilterTransform {
-
-  private final Dataframe dataframe;
-
-  public FilterDataframe(Dataframe dataframe) {
-    this.dataframe = dataframe;
-  }
+public record FilterDataframe(Dataframe dataframe) implements FilterTransform {
 
   public <SOURCE1> Dataframe filter(String columnName, Predicate<SOURCE1> predicate) {
     List<SOURCE1> values1 = this.dataframe.get(columnName);
