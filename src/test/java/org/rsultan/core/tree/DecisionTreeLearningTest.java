@@ -22,15 +22,15 @@ public class DecisionTreeLearningTest {
 
   private static Stream<Arguments> params_that_must_perform_decision_tree_classifier() {
     return Stream.of(
-        Arguments.of(new DecisionTreeClassifier(-1, GINI), new String[]{"a", "a", "e", "e", "e"}),
-        Arguments.of(new DecisionTreeClassifier(0, GINI), new String[]{"a", "a", "e", "e", "e"}),
-        Arguments.of(new DecisionTreeClassifier(1, GINI), new String[]{"a", "a", "e", "e", "e"}),
-        Arguments.of(new DecisionTreeClassifier(2, GINI), new String[]{"a", "a", "a", "a", "a"}),
+        Arguments.of(new DecisionTreeClassifier(-1, GINI), new String[]{"a", "a", "b", "b", "b"}),
+        Arguments.of(new DecisionTreeClassifier(0, GINI), new String[]{"a", "a", "b", "b", "b"}),
+        Arguments.of(new DecisionTreeClassifier(1, GINI), new String[]{"a", "a", "b", "b", "b"}),
+        Arguments.of(new DecisionTreeClassifier(2, GINI), new String[]{"a", "a", "b", "b", "e"}),
         Arguments
-            .of(new DecisionTreeClassifier(-1, ENTROPY), new String[]{"a", "a", "e", "e", "e"}),
-        Arguments.of(new DecisionTreeClassifier(0, ENTROPY), new String[]{"a", "a", "e", "e", "e"}),
-        Arguments.of(new DecisionTreeClassifier(1, ENTROPY), new String[]{"a", "a", "e", "e", "e"}),
-        Arguments.of(new DecisionTreeClassifier(2, ENTROPY), new String[]{"a", "a", "a", "a", "a"})
+            .of(new DecisionTreeClassifier(-1, ENTROPY), new String[]{"a", "a", "b", "b", "b"}),
+        Arguments.of(new DecisionTreeClassifier(0, ENTROPY), new String[]{"a", "a", "b", "b", "b"}),
+        Arguments.of(new DecisionTreeClassifier(1, ENTROPY), new String[]{"a", "a", "b", "b", "b"}),
+        Arguments.of(new DecisionTreeClassifier(2, ENTROPY), new String[]{"a", "a", "b", "b", "e"})
     );
   }
 
