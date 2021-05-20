@@ -20,9 +20,7 @@ public class LogisticRegressionExample {
   }
 
   public static void main(String[] args) throws IOException {
-    var df = Dataframes.trainTest(
-        Dataframes.csv(args[0], ",", "\"", false).getColumns()
-    ).shuffle();
+    var df = Dataframes.csvTrainTest(args[0], ",", "\"", false).shuffle();
     var dfSplit = df.split();
 
     var setosaRegression = new LogisticRegression(1000, 0.1)

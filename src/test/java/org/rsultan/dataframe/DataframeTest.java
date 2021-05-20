@@ -46,6 +46,18 @@ public class DataframeTest {
     );
   }
 
+  private static Stream<Arguments> params_that_must_throw_exception_due_to_malformed_row_input() {
+    return Stream.of(
+        of(null, null, NullPointerException.class),
+        of(new String[]{"c1", "c2", "c3", "c4", "c5"}, null, NullPointerException.class),
+        of(new String[]{"c1", "c2", "c3", "c4", "c5"}, new Row[]{new Row(1, 3, 3)},
+            IllegalArgumentException.class),
+        of(new String[]{"c1", "c2", "c3", "c4", "c5"},
+            new Row[]{new Row(1, 3, 3), new Row(1, 3, 3, 4)},
+            IllegalArgumentException.class)
+    );
+  }
+
   @Test
   public void must_load_dataframe_correctly_with_empty_dataframe() {
     var df = Dataframes.create();
@@ -102,11 +114,51 @@ public class DataframeTest {
   }
 
   @ParameterizedTest
+  @MethodSource("params_that_must_load_dataframe_correctly")
+  public void must_load_train_test_dataframe_correctly(Column<?>[] columns, int expectedRows,
+      int expectedCols) {
+    var dataframe = Dataframes.create(columns);
+
+    assertThat(dataframe.getRowSize()).isEqualTo(expectedRows);
+    assertThat(dataframe.getColumnSize()).isEqualTo(expectedCols);
+    var matrix = dataframe
+        .toMatrix(Stream.of(columns).map(Column::columnName).toArray(String[]::new));
+    range(0, columns.length).forEach(idx -> {
+      var column = columns[idx];
+      var actualValues = dataframe.get(column.columnName());
+      var expectedValues = columns[idx].values().toArray();
+      var vector = dataframe.toVector(column.columnName());
+      var expectedValuesArray = Stream.of(expectedValues)
+          .map(String::valueOf)
+          .mapToDouble(Double::parseDouble)
+          .toArray();
+
+      assertThat(actualValues).containsExactly(expectedValues);
+      assertThat(vector.toDoubleVector()).containsExactly(expectedValuesArray);
+      assertThat(vector.toDoubleVector()).containsExactly(matrix.getColumn(idx).toDoubleVector());
+    });
+    dataframe.show(expectedRows);
+  }
+
+  @ParameterizedTest
   @MethodSource("params_that_must_throw_exception_due_to_malformed_input")
   public void must_throw_exception_due_to_malformed_input(Column<?>[] columns,
       Class<? extends Exception> exceptionClass) {
     assertThrows(exceptionClass, () -> {
       Dataframe dataframe = Dataframes.create(columns);
+      dataframe.show(10);
+      dataframe.toMatrix();
+    });
+  }
+
+  @ParameterizedTest
+  @MethodSource("params_that_must_throw_exception_due_to_malformed_row_input")
+  public void must_throw_exception_due_to_malformed_row_input(
+      String[] columnNames,
+      Row[] rows,
+      Class<? extends Exception> exceptionClass) {
+    assertThrows(exceptionClass, () -> {
+      Dataframe dataframe = Dataframes.create(columnNames, rows);
       dataframe.show(10);
       dataframe.toMatrix();
     });

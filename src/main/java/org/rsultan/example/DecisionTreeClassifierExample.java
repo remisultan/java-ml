@@ -34,9 +34,7 @@ public class DecisionTreeClassifierExample {
 
   private static void regressor(String arg) throws IOException {
     var decisionTreeRegression = new DecisionTreeRegressor(6);
-    var dataframe = Dataframes.trainTest(
-        Dataframes.csv(arg, ";", "\"", true).getColumns()
-    ).shuffle();
+    var dataframe = Dataframes.csvTrainTest(arg, ";").shuffle();
     var dfSplit = dataframe.setSplitValue(0.75).split();
     decisionTreeRegression
         .setResponseVariableName("quality")
@@ -47,10 +45,7 @@ public class DecisionTreeClassifierExample {
 
   private static void classifier(String arg) throws IOException {
     var decisionTreeClassifier = new DecisionTreeClassifier(5, GINI);
-    var df = Dataframes.csv(arg, ",", "\"", false);
-    var dataframe = Dataframes.trainTest(
-        df.getColumns()
-    ).shuffle();
+    var dataframe = Dataframes.csvTrainTest(arg, ",", "\"", false).shuffle();
     var dfSplit = dataframe.setSplitValue(0.4).split();
     decisionTreeClassifier.setResponseVariableName("c4").train(dfSplit.train());
     var newDf = decisionTreeClassifier.predict(dfSplit.test());

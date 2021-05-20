@@ -20,9 +20,7 @@ public class SoftmaxRegressionExample {
   }
 
   public static void main(String[] args) throws IOException {
-    var df = Dataframes.trainTest(
-        Dataframes.csv(args[0], ",", "\"", false).getColumns()
-    ).shuffle();
+    var df = Dataframes.csvTrainTest(args[0], ",", "\"", false).shuffle();
     var dfSplit = df.split();
 
     var softmaxRegression = new SoftmaxRegression(1000, 0.1)
