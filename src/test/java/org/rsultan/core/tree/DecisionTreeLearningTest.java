@@ -1,6 +1,7 @@
 package org.rsultan.core.tree;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.junit.jupiter.params.provider.Arguments.of;
 import static org.rsultan.core.tree.impurity.ImpurityStrategy.ENTROPY;
 import static org.rsultan.core.tree.impurity.ImpurityStrategy.GINI;
 import static org.rsultan.utils.TestUtils.getResourceFileName;
@@ -22,36 +23,45 @@ public class DecisionTreeLearningTest {
 
   private static Stream<Arguments> params_that_must_perform_decision_tree_classifier() {
     return Stream.of(
-        Arguments.of(new DecisionTreeClassifier(-1, GINI), new String[]{"a", "a", "b", "b", "b"}),
-        Arguments.of(new DecisionTreeClassifier(0, GINI), new String[]{"a", "a", "b", "b", "b"}),
-        Arguments.of(new DecisionTreeClassifier(1, GINI), new String[]{"a", "a", "b", "b", "b"}),
-        Arguments.of(new DecisionTreeClassifier(2, GINI), new String[]{"a", "a", "b", "b", "e"}),
-        Arguments
-            .of(new DecisionTreeClassifier(-1, ENTROPY), new String[]{"a", "a", "b", "b", "b"}),
-        Arguments.of(new DecisionTreeClassifier(0, ENTROPY), new String[]{"a", "a", "b", "b", "b"}),
-        Arguments.of(new DecisionTreeClassifier(1, ENTROPY), new String[]{"a", "a", "b", "b", "b"}),
-        Arguments.of(new DecisionTreeClassifier(2, ENTROPY), new String[]{"a", "a", "b", "b", "e"})
+        of(new DecisionTreeClassifier(-1, GINI), new String[]{"y", "x", "x2", "x3"},
+            new String[]{"a", "a", "b", "b", "b"}),
+        of(new DecisionTreeClassifier(0, GINI), new String[]{"y", "x", "x2", "x3"},
+            new String[]{"a", "a", "b", "b", "b"}),
+        of(new DecisionTreeClassifier(1, GINI), new String[]{"y", "x", "x2", "x3"},
+            new String[]{"a", "a", "b", "b", "b"}),
+        of(new DecisionTreeClassifier(2, GINI), new String[]{"y", "x", "x2", "x3"},
+            new String[]{"a", "a", "b", "b", "e"}),
+        of(new DecisionTreeClassifier(-1, ENTROPY), new String[]{"y", "x", "x2", "x3"},
+                new String[]{"a", "a", "b", "b", "b"}),
+        of(new DecisionTreeClassifier(0, ENTROPY), new String[]{"y", "x", "x2", "x3"},
+            new String[]{"a", "a", "b", "b", "b"}),
+        of(new DecisionTreeClassifier(1, ENTROPY), new String[]{"y", "x", "x2", "x3"},
+            new String[]{"a", "a", "b", "b", "b"}),
+        of(new DecisionTreeClassifier(2, ENTROPY), new String[]{},
+            new String[]{"a", "a", "b", "b", "e"})
     );
   }
 
   private static Stream<Arguments> params_that_must_perform_decision_tree_regressor() {
     return Stream.of(
-        Arguments.of(new DecisionTreeRegressor(-1)),
-        Arguments.of(new DecisionTreeRegressor(0)),
-        Arguments.of(new DecisionTreeRegressor(1)),
-        Arguments.of(new DecisionTreeRegressor(2))
+        of(new DecisionTreeRegressor(-1)),
+        of(new DecisionTreeRegressor(0)),
+        of(new DecisionTreeRegressor(1)),
+        of(new DecisionTreeRegressor(2))
     );
   }
 
   @ParameterizedTest
   @MethodSource("params_that_must_perform_decision_tree_classifier")
   public void must_perform_decision_tree_classifier(DecisionTreeClassifier decisionTreeClassifier,
-      String[] expected)
+      String[] predictorNames,
+      String[] expected
+  )
       throws IOException {
     var dataframe = Dataframes.csv(getResourceFileName("org/rsultan/utils/example-classif.csv"));
     var predictions = decisionTreeClassifier
         .setResponseVariableName("strColumn")
-        .setPredictorNames("y", "x", "x2", "x3")
+        .setPredictorNames(predictorNames)
         .train(dataframe)
         .predict(dataframe)
         .get("predictions");

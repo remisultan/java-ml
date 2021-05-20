@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.Arguments.of;
 import static org.rsultan.utils.TestUtils.getResourceFileName;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Stream;
@@ -14,7 +13,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.rsultan.utils.CSVUtilsTest;
 
 public class DataframeTest {
 
@@ -48,10 +46,22 @@ public class DataframeTest {
     );
   }
 
+  private static Stream<Arguments> params_that_must_throw_exception_due_to_malformed_row_input() {
+    return Stream.of(
+        of(null, null, NullPointerException.class),
+        of(new String[]{"c1", "c2", "c3", "c4", "c5"}, null, NullPointerException.class),
+        of(new String[]{"c1", "c2", "c3", "c4", "c5"}, new Row[]{new Row(1, 3, 3)},
+            IllegalArgumentException.class),
+        of(new String[]{"c1", "c2", "c3", "c4", "c5"},
+            new Row[]{new Row(1, 3, 3), new Row(1, 3, 3, 4)},
+            IllegalArgumentException.class)
+    );
+  }
+
   @Test
   public void must_load_dataframe_correctly_with_empty_dataframe() {
     var df = Dataframes.create();
-    assertThat(df.getRows()).isEqualTo(0);
+    assertThat(df.getRowSize()).isEqualTo(0);
     assertThat(df.getColumnSize()).isEqualTo(0);
   }
 
@@ -63,7 +73,7 @@ public class DataframeTest {
 
     var matrix = df.toMatrix("red", "green", "blue", "yellow");
 
-    assertThat(df.getRows()).isEqualTo(4);
+    assertThat(df.getRowSize()).isEqualTo(4);
     assertThat(df.getColumnSize()).isEqualTo(5);
     assertThat(df.get("red")).containsExactly(true, false, false, false);
     assertThat(df.get("green")).containsExactly(false, true, false, false);
@@ -82,7 +92,34 @@ public class DataframeTest {
       int expectedCols) {
     var dataframe = Dataframes.create(columns);
 
-    assertThat(dataframe.getRows()).isEqualTo(expectedRows);
+    assertThat(dataframe.getRowSize()).isEqualTo(expectedRows);
+    assertThat(dataframe.getColumnSize()).isEqualTo(expectedCols);
+    var matrix = dataframe
+        .toMatrix(Stream.of(columns).map(Column::columnName).toArray(String[]::new));
+    range(0, columns.length).forEach(idx -> {
+      var column = columns[idx];
+      var actualValues = dataframe.get(column.columnName());
+      var expectedValues = columns[idx].values().toArray();
+      var vector = dataframe.toVector(column.columnName());
+      var expectedValuesArray = Stream.of(expectedValues)
+          .map(String::valueOf)
+          .mapToDouble(Double::parseDouble)
+          .toArray();
+
+      assertThat(actualValues).containsExactly(expectedValues);
+      assertThat(vector.toDoubleVector()).containsExactly(expectedValuesArray);
+      assertThat(vector.toDoubleVector()).containsExactly(matrix.getColumn(idx).toDoubleVector());
+    });
+    dataframe.show(expectedRows);
+  }
+
+  @ParameterizedTest
+  @MethodSource("params_that_must_load_dataframe_correctly")
+  public void must_load_train_test_dataframe_correctly(Column<?>[] columns, int expectedRows,
+      int expectedCols) {
+    var dataframe = Dataframes.create(columns);
+
+    assertThat(dataframe.getRowSize()).isEqualTo(expectedRows);
     assertThat(dataframe.getColumnSize()).isEqualTo(expectedCols);
     var matrix = dataframe
         .toMatrix(Stream.of(columns).map(Column::columnName).toArray(String[]::new));
@@ -109,6 +146,19 @@ public class DataframeTest {
       Class<? extends Exception> exceptionClass) {
     assertThrows(exceptionClass, () -> {
       Dataframe dataframe = Dataframes.create(columns);
+      dataframe.show(10);
+      dataframe.toMatrix();
+    });
+  }
+
+  @ParameterizedTest
+  @MethodSource("params_that_must_throw_exception_due_to_malformed_row_input")
+  public void must_throw_exception_due_to_malformed_row_input(
+      String[] columnNames,
+      Row[] rows,
+      Class<? extends Exception> exceptionClass) {
+    assertThrows(exceptionClass, () -> {
+      Dataframe dataframe = Dataframes.create(columnNames, rows);
       dataframe.show(10);
       dataframe.toMatrix();
     });
@@ -151,7 +201,7 @@ public class DataframeTest {
     );
     df = df.filter("d1", (Double d1) -> d1 % 2 == 0);
 
-    assertThat(df.getRows()).isEqualTo(2);
+    assertThat(df.getRowSize()).isEqualTo(2);
     assertThat(df.get("d1")).containsExactly(2.0D, 4.0D);
     assertThat(df.get("d2")).containsExactly(5.0D, 9.0D);
   }
@@ -164,7 +214,7 @@ public class DataframeTest {
     );
     df = df.filter("d1", "d2", (Double d1, Double d2) -> d1 * d2 > 20D);
 
-    assertThat(df.getRows()).isEqualTo(3);
+    assertThat(df.getRowSize()).isEqualTo(3);
     assertThat(df.get("d1")).containsExactly(3.0D, 4.0, 5.0D);
     assertThat(df.get("d2")).containsExactly(7.0D, 9.0D, 11.0D);
   }

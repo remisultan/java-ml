@@ -15,14 +15,9 @@ import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframe;
 import org.rsultan.dataframe.Dataframes;
 
-public class MatrixDataframe implements MatrixTransform {
+public record MatrixDataframe(Dataframe dataframe) implements MatrixTransform {
 
   private static final String NUMBER_REGEX = "^(-?\\d+(\\.\\d+)*)$";
-  private final Dataframe dataframe;
-
-  public MatrixDataframe(Dataframe dataframe) {
-    this.dataframe = dataframe;
-  }
 
   public INDArray toVector(String columnName) {
     double[] doubles = this.dataframe.getData().get(columnName).stream()
@@ -33,7 +28,7 @@ public class MatrixDataframe implements MatrixTransform {
 
   public INDArray toMatrix(String... columnNames) {
     final Dataframe df = columnNames.length != 0 ? dataframe.select(columnNames) : dataframe;
-    int[] shape = {df.getRows(), df.getColumnSize()};
+    int[] shape = {df.getRowSize(), df.getColumnSize()};
     var matrix = Nd4j.zeros(shape);
 
     range(0, matrix.rows()).forEach(rowIdx ->

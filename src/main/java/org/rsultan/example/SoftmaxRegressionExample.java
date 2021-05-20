@@ -20,27 +20,27 @@ public class SoftmaxRegressionExample {
   }
 
   public static void main(String[] args) throws IOException {
-    var df = Dataframes.csv(args[0], ",", "\"", false);
-    var testDf = Dataframes.csv(args[1], ",", "\"", false);
+    var df = Dataframes.csvTrainTest(args[0], ",", "\"", false).shuffle();
+    var dfSplit = df.split();
 
     var softmaxRegression = new SoftmaxRegression(1000, 0.1)
         .setResponseVariableName("c4")
         .setPredictorNames("c0", "c1", "c2", "c3")
         .setRegularization(RIDGE)
-        .setLambda(0.0014)
+        .setLambda(0.005)
         .setLossAccuracyOffset(100)
-        .train(df);
+        .train(dfSplit.train());
     softmaxRegression.getHistory().tail();
-    softmaxRegression.predict(testDf).show(2000);
+    softmaxRegression.predict(dfSplit.test()).show(2000);
 
     softmaxRegression = new SoftmaxRegression(1000, 0.1)
         .setResponseVariableName("c4")
         .setPredictorNames("c0", "c1", "c2", "c3")
         .setRegularization(LASSO)
-        .setLambda(0.0014)
+        .setLambda(0.003)
         .setLossAccuracyOffset(100)
-        .train(df);
+        .train(dfSplit.train());
     softmaxRegression.getHistory().tail();
-    softmaxRegression.predict(testDf).show(2000);
+    softmaxRegression.predict(dfSplit.test()).show(2000);
   }
 }
