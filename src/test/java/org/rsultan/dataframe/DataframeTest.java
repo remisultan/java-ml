@@ -38,7 +38,6 @@ public class DataframeTest {
   private static Stream<Arguments> params_that_must_throw_exception_due_to_malformed_input() {
     return Stream.of(
         of(new Column[]{new Column<>(null, (List<Object>) null)}, NullPointerException.class),
-        of(new Column[]{new Column<>(null, 0, 2, 3, 4)}, NullPointerException.class),
         of(new Column<?>[]{new Column<>("c1", 1, 2), new Column<>("c2", 1, 2, 3)},
             IllegalArgumentException.class),
         of(new Column<?>[]{new Column<>("c1", 1, "lat65", 3), new Column<>("c2", 1, 2, 3)},

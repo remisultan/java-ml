@@ -5,7 +5,6 @@ import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -34,8 +33,8 @@ public abstract class DecisionTreeLearning
   protected final ImpurityStrategy strategy;
 
   protected Node tree;
-  protected List<?> responseValues;
-  protected List<String> featuresNames;
+  protected List<?> responses;
+  protected List<?> features;
   protected ImpurityService impurityService;
 
   public DecisionTreeLearning(int depth, ImpurityStrategy strategy) {
@@ -45,7 +44,7 @@ public abstract class DecisionTreeLearning
 
   protected abstract <T extends Number> T computePredictedResponse(INDArray array);
 
-  protected abstract Object getNodePrediction(Node node);
+  protected abstract <T> T getNodePrediction(Node number);
 
   protected abstract List<?> getResponseValues(Dataframe dataframe);
 
@@ -53,35 +52,40 @@ public abstract class DecisionTreeLearning
 
   @Override
   public DecisionTreeLearning train(Dataframe dataframe) {
-    var dataframeNoResponse = dataframe.mapWithout(responseVariableName);
-    var dataframeFeatures = predictorNames.length == 0 ?
-        dataframeNoResponse : dataframeNoResponse.select(predictorNames);
+    var dfNoResponse = dataframe.mapWithout(responseVariableName);
+    var dfFeatures =
+        predictorNames.length == 0 ? dfNoResponse : dfNoResponse.select(predictorNames);
+    var featureNames = stream(dfFeatures.getColumns()).map(Column::columnName).collect(toList());
+    var responses = getResponseValues(dataframe);
+    return train(dfFeatures.toMatrix(), buildY(dataframe), featureNames, responses);
+  }
 
-    featuresNames = stream(dataframeFeatures.getColumns()).map(Column::columnName)
-        .collect(toList());
-    responseValues = getResponseValues(dataframe);
-    impurityService = strategy.getImpurityService(responseValues.size());
-
-    var X = dataframeFeatures.toMatrix();
-    var Y = this.buildY(dataframe);
+  DecisionTreeLearning train(INDArray X, INDArray Y, List<?> features, List<?> responses) {
+    impurityService = strategy.getImpurityService(responses.size());
+    this.features = features;
+    this.responses = responses;
     this.tree = buildTree(X, Y, depth);
     return this;
   }
 
   @Override
   public Dataframe predict(Dataframe dataframe) {
-    var predictions = new Column<>(predictionColumnName, new ArrayList<>());
-    range(0, dataframe.getRowSize()).mapToObj(row -> {
+    return dataframe.addColumn(new Column<>(predictionColumnName, rawPredict(dataframe)));
+  }
+
+  protected <T> List<T> rawPredict(Dataframe dataframe) {
+    return range(0, dataframe.getRowSize()).mapToObj(row -> {
       var node = tree;
       while (nonNull(node.left())) {
-        var featureName = featuresNames.get(node.feature());
+        var featureName = getPredictionNodeFeatureName(node);
         double featureValue = dataframe.<Number>get(featureName).get(row).doubleValue();
         node = featureValue < node.featureThreshold() ? node.left() : node.right();
       }
-      return getNodePrediction(node);
-    }).forEach(predictions.values()::add);
-    return dataframe.addColumn(predictions);
+      return this.<T>getNodePrediction(node);
+    }).collect(toList());
   }
+
+  protected abstract <T> T getPredictionNodeFeatureName(Node node);
 
   protected Node buildTree(INDArray features, INDArray response, int currentDepth) {
     if (currentDepth < 0) {
@@ -132,7 +136,7 @@ public abstract class DecisionTreeLearning
     for (int featureIdx = 0; featureIdx < sortedFeatures.columns(); featureIdx++) {
       var thresholds = sortedFeatures.getColumn(featureIdx);
       var labels = sortedLabels.getColumn(featureIdx);
-      var left = Nd4j.zeros(1, responseValues.size());
+      var left = Nd4j.zeros(1, responses.size());
       var right = classCount.dup();
       for (int splitIdx = 1; splitIdx < maxRows; splitIdx++) {
         var classVal = labels.getInt(splitIdx - 1);
