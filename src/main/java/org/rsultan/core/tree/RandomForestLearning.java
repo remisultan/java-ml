@@ -6,18 +6,25 @@ import static java.util.stream.IntStream.range;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.rsultan.core.ModelParameters;
 import org.rsultan.core.Trainable;
 import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframe;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public abstract class RandomForestLearning
-    extends ModelParameters<RandomForestLearning>
+public abstract class RandomForestLearning extends ModelParameters<RandomForestLearning>
     implements Trainable<RandomForestLearning> {
 
-  protected int numberOfEstimators = 100;
+  private static final Logger LOG = LoggerFactory.getLogger(RandomForestLearning.class);
+  private final int numberOfEstimators;
+  private final ExecutorService executor;
+
   protected double sampleSizeRatio = 0.25;
   protected int treeDepth = 1;
   protected int sampleFeatures = 0;
@@ -27,11 +34,16 @@ public abstract class RandomForestLearning
 
   private List<? extends DecisionTreeLearning> trees;
 
-  protected abstract List<?> getResponseValues(Dataframe dataframe);
+  public RandomForestLearning(int numberOfEstimators) {
+    this.numberOfEstimators = numberOfEstimators;
+    executor = Executors.newFixedThreadPool(numberOfEstimators);
+  }
+
+  protected abstract DecisionTreeLearning buildDecisionTreeLearning();
 
   protected abstract INDArray buildY(Dataframe dataframe);
 
-  protected abstract DecisionTreeLearning buildDecisionTreeLearning();
+  protected abstract List<?> getResponseValues(Dataframe dataframe);
 
   protected abstract int getFeatureSampleSize(int numberOfFeatures);
 
@@ -55,6 +67,7 @@ public abstract class RandomForestLearning
     int featureSampleSize = getFeatureSampleSize(X.columns());
 
     trees = range(0, numberOfEstimators)
+        .peek(idx -> LOG.debug("Tree number: " + (idx + 1)))
         .mapToObj(idx -> buildDecisionTreeLearning())
         .map(decisionTreeLearning -> {
           var subRowIndices = getSampleIndices(X.rows(), rowSampleSize);
@@ -63,9 +76,20 @@ public abstract class RandomForestLearning
           var Ysampled = Y.getRows(subRowIndices);
           var localFeatures = stream(subFeatureIndices).mapToObj(featureIndices::get)
               .collect(toList());
-          return decisionTreeLearning.train(Xsampled, Ysampled, localFeatures, responses);
-        }).collect(toList());
+          return executor.submit(
+              () -> decisionTreeLearning.train(Xsampled, Ysampled, localFeatures, responses)
+          );
+        }).map(this::getFuture).collect(toList());
+    executor.shutdown();
     return this;
+  }
+
+  private DecisionTreeLearning getFuture(Future<? extends DecisionTreeLearning> future) {
+    try {
+      return future.get();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private int[] getSampleIndices(int m, int rowSampleSize) {
@@ -85,11 +109,6 @@ public abstract class RandomForestLearning
     var predictionMatrix = Nd4j.create(allPredictions, rows, cols);
     List<?> predictions = getFinalPredictions(predictionMatrix);
     return dataframe.addColumn(new Column<>(predictionColumnName, predictions));
-  }
-
-  public RandomForestLearning setNumberOfEstimators(int numberOfEstimators) {
-    this.numberOfEstimators = numberOfEstimators;
-    return this;
   }
 
   public RandomForestLearning setSampleSizeRatio(double sampleSizeRatio) {

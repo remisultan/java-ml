@@ -91,10 +91,12 @@ public abstract class DecisionTreeLearning
     if (currentDepth < 0) {
       return null;
     }
-    LOG.info("Sorting labels per features");
+    LOG.debug("Depth: " + (depth - currentDepth + 1));
+    LOG.debug("Sorting labels per features");
     var sortedLabels = getSortedLabelsPerFeature(features, response);
-    LOG.info("Computing best split");
+    LOG.debug("Computing best split");
     var gain = getBestSplit(response, sortedLabels.get(0), sortedLabels.get(1));
+    LOG.debug("Computing children nodes");
     var leftNode = buildLeftNode(features, response, currentDepth, gain);
     var rightNode = buildRightNode(features, response, currentDepth, gain);
     var node = new Node(

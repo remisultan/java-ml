@@ -5,7 +5,6 @@ import static java.util.Arrays.stream;
 import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
 import static org.nd4j.common.util.MathUtils.round;
-import static org.rsultan.core.tree.impurity.ImpurityStrategy.GINI;
 
 import java.util.List;
 import java.util.UUID;
@@ -17,7 +16,12 @@ import org.rsultan.dataframe.Dataframe;
 
 public class RandomForestClassifier extends RandomForestLearning {
 
-  private ImpurityStrategy impurityStrategy = GINI;
+  private final ImpurityStrategy impurityStrategy;
+
+  public RandomForestClassifier(int numberOfEstimator, ImpurityStrategy impurityStrategy) {
+    super(numberOfEstimator);
+    this.impurityStrategy = impurityStrategy;
+  }
 
   @Override
   protected List<?> getResponseValues(Dataframe dataframe) {
@@ -36,9 +40,9 @@ public class RandomForestClassifier extends RandomForestLearning {
 
   @Override
   protected DecisionTreeLearning buildDecisionTreeLearning() {
-    return new RandomForestClassifierTree(treeDepth, GINI, this.featureNames)
+    return new RandomForestClassifierTree(treeDepth, impurityStrategy, this.featureNames)
         .setResponseVariableName(responseVariableName)
-        .setPredictionColumnName(this.predictionColumnName);
+        .setPredictionColumnName(predictionColumnName);
   }
 
   @Override
@@ -52,11 +56,6 @@ public class RandomForestClassifier extends RandomForestLearning {
     var counts = impurityService.getClassCount(predictionMatrix);
     int[] bestResponse = Nd4j.argMax(counts, 1).toIntVector();
     return stream(bestResponse).mapToObj(responses::get).collect(toList());
-  }
-
-  public RandomForestClassifier setImpurityStrategy(ImpurityStrategy impurityStrategy) {
-    this.impurityStrategy = impurityStrategy;
-    return this;
   }
 
   private static class RandomForestClassifierTree extends DecisionTreeClassifier {

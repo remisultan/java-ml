@@ -1,14 +1,14 @@
 package org.rsultan.example;
 
 import static java.lang.Boolean.parseBoolean;
-import static org.rsultan.core.tree.impurity.ImpurityStrategy.GINI;
+import static org.rsultan.core.tree.impurity.ImpurityStrategy.ENTROPY;
 
 import java.io.IOException;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.factory.Nd4j;
-import org.rsultan.core.tree.DecisionTreeClassifier;
 import org.rsultan.core.tree.DecisionTreeRegressor;
 import org.rsultan.core.tree.RandomForestClassifier;
+import org.rsultan.core.tree.RandomForestRegressor;
 import org.rsultan.dataframe.Dataframes;
 
 public class RandomForestExample {
@@ -32,7 +32,10 @@ public class RandomForestExample {
   }
 
   private static void regressor(String arg) throws IOException {
-    var decisionTreeRegression = new DecisionTreeRegressor(5);
+    var decisionTreeRegression = new RandomForestRegressor(10)
+        .setTreeDepth(3)
+        .setSampleFeatures(4)
+        .setSampleSizeRatio(0.4);
     var dataframe = Dataframes.csvTrainTest(arg, ";").shuffle();
     var dfSplit = dataframe.setSplitValue(0.5).split();
     decisionTreeRegression
@@ -43,9 +46,8 @@ public class RandomForestExample {
   }
 
   private static void classifier(String arg) throws IOException {
-    var decisionTreeClassifier = new RandomForestClassifier()
+    var decisionTreeClassifier = new RandomForestClassifier(100, ENTROPY)
         .setTreeDepth(5)
-        .setNumberOfEstimators(10)
         .setSampleSizeRatio(0.4)
         .setResponseVariableName("c4");
     var dataframe = Dataframes.csvTrainTest(arg, ",", "\"", false).shuffle();
