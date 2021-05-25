@@ -29,7 +29,7 @@ import org.rsultan.dataframe.transform.matrix.MatrixTransform;
 
 public class Dataframe implements MapTransform, FilterTransform, MatrixTransform {
 
-  private final Map<String, List<?>> data;
+  private final Map<?, List<?>> data;
   private final Column<?>[] columns;
   private final int rowSize;
 
@@ -141,7 +141,7 @@ public class Dataframe implements MapTransform, FilterTransform, MatrixTransform
     show(this.rowSize - 10, this.rowSize);
   }
 
-  public <T> List<T> get(String column) {
+  public <T> List<T> get(Object column) {
     return List.copyOf((List<T>) data.get(column));
   }
 
@@ -157,7 +157,7 @@ public class Dataframe implements MapTransform, FilterTransform, MatrixTransform
     return rowSize;
   }
 
-  public Map<String, List<?>> getData() {
+  public Map<?, List<?>> getData() {
     return data;
   }
 }

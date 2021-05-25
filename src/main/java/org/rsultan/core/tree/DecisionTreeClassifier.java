@@ -1,5 +1,6 @@
 package org.rsultan.core.tree;
 
+import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
 import static org.nd4j.linalg.factory.Nd4j.argMax;
 
@@ -18,7 +19,7 @@ public class DecisionTreeClassifier extends DecisionTreeLearning {
 
   @Override
   protected Object getNodePrediction(Node node) {
-    return responseValues.get(node.predictedResponse().intValue());
+    return responses.get(node.predictedResponse().intValue());
   }
 
   @Override
@@ -29,8 +30,11 @@ public class DecisionTreeClassifier extends DecisionTreeLearning {
 
   @Override
   protected INDArray buildY(Dataframe dataframe) {
+    if (isNull(responses)) {
+      responses = getResponseValues(dataframe);
+    }
     var columnTemp = UUID.randomUUID().toString();
-    return dataframe.map(columnTemp, responseValues::indexOf, responseVariableName)
+    return dataframe.map(columnTemp, responses::indexOf, responseVariableName)
         .toMatrix(columnTemp);
   }
 
@@ -44,5 +48,10 @@ public class DecisionTreeClassifier extends DecisionTreeLearning {
   public DecisionTreeClassifier train(Dataframe dataframe) {
     super.train(dataframe);
     return this;
+  }
+
+  @Override
+  protected Object getPredictionNodeFeatureName(Node node) {
+    return features.get(node.feature());
   }
 }

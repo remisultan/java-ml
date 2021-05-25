@@ -2,7 +2,6 @@ package org.rsultan.dataframe;
 
 import static java.util.Optional.of;
 
-import java.util.Optional;
 import org.rsultan.dataframe.transform.shuffle.ShuffleDataframe;
 import org.rsultan.dataframe.transform.shuffle.ShuffleTransform;
 import org.rsultan.dataframe.transform.split.SplitDataframe;
@@ -25,7 +24,7 @@ public class TrainTestDataframe extends Dataframe implements ShuffleTransform<Tr
 
   @Override
   public TrainTestDataframe shuffle() {
-    return shuffleTransform.shuffle();
+    return shuffleTransform.shuffle().setSplitValue(splitValue);
   }
 
   @Override
@@ -40,7 +39,9 @@ public class TrainTestDataframe extends Dataframe implements ShuffleTransform<Tr
   public TrainTestDataframe setSplitValue(double splitValue) {
     this.splitValue = of(splitValue)
         .filter(split -> split > 0 && split < 1)
-        .orElseThrow(() -> new IllegalArgumentException("Split value must be between 0 and 1 excluded"));
+        .orElseThrow(
+            () -> new IllegalArgumentException("Split value must be between 0 and 1 excluded")
+        );
     return this;
   }
 }
