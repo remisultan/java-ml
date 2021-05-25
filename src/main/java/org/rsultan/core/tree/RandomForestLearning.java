@@ -1,5 +1,6 @@
 package org.rsultan.core.tree;
 
+import static java.lang.Math.min;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
@@ -35,8 +36,8 @@ public abstract class RandomForestLearning extends ModelParameters<RandomForestL
   private List<? extends DecisionTreeLearning> trees;
 
   public RandomForestLearning(int numberOfEstimators) {
-    this.numberOfEstimators = numberOfEstimators;
-    executor = Executors.newFixedThreadPool(numberOfEstimators);
+    this.numberOfEstimators = numberOfEstimators < 1 ? 10 : numberOfEstimators;
+    executor = Executors.newFixedThreadPool(this.numberOfEstimators);
   }
 
   protected abstract DecisionTreeLearning buildDecisionTreeLearning();
@@ -70,8 +71,9 @@ public abstract class RandomForestLearning extends ModelParameters<RandomForestL
         .peek(idx -> LOG.debug("Tree number: " + (idx + 1)))
         .mapToObj(idx -> buildDecisionTreeLearning())
         .map(decisionTreeLearning -> {
-          var subRowIndices = getSampleIndices(X.rows(), rowSampleSize);
-          var subFeatureIndices = getSampleIndices(X.columns(), featureSampleSize);
+          var subRowIndices = getSampleIndices(X.rows(), min(rowSampleSize, X.rows()));
+          var subFeatureIndices = getSampleIndices(X.columns(),
+              min(featureSampleSize, X.columns()));
           var Xsampled = X.getRows(subRowIndices).getColumns(subFeatureIndices);
           var Ysampled = Y.getRows(subRowIndices);
           var localFeatures = stream(subFeatureIndices).mapToObj(featureIndices::get)
@@ -121,7 +123,7 @@ public abstract class RandomForestLearning extends ModelParameters<RandomForestL
     return this;
   }
 
-  public RandomForestLearning setSampleFeatures(int sampleFeatures) {
+  public RandomForestLearning setSampleFeatureSize(int sampleFeatures) {
     this.sampleFeatures = sampleFeatures;
     return this;
   }

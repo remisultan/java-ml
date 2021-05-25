@@ -6,7 +6,6 @@ import static org.rsultan.core.tree.impurity.ImpurityStrategy.ENTROPY;
 import java.io.IOException;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.factory.Nd4j;
-import org.rsultan.core.tree.DecisionTreeRegressor;
 import org.rsultan.core.tree.RandomForestClassifier;
 import org.rsultan.core.tree.RandomForestRegressor;
 import org.rsultan.dataframe.Dataframes;
@@ -32,28 +31,28 @@ public class RandomForestExample {
   }
 
   private static void regressor(String arg) throws IOException {
-    var decisionTreeRegression = new RandomForestRegressor(10)
+    var radomForestRegression = new RandomForestRegressor(10)
         .setTreeDepth(3)
-        .setSampleFeatures(4)
+        .setSampleFeatureSize(2)
         .setSampleSizeRatio(0.4);
     var dataframe = Dataframes.csvTrainTest(arg, ";").shuffle();
     var dfSplit = dataframe.setSplitValue(0.5).split();
-    decisionTreeRegression
+    radomForestRegression
         .setResponseVariableName("alcohol")
         .train(dfSplit.train());
-    var newDf = decisionTreeRegression.predict(dfSplit.test());
+    var newDf = radomForestRegression.predict(dfSplit.test());
     newDf.show(0, 15000);
   }
 
   private static void classifier(String arg) throws IOException {
-    var decisionTreeClassifier = new RandomForestClassifier(100, ENTROPY)
+    var randomForestClassifier = new RandomForestClassifier(100, ENTROPY)
         .setTreeDepth(5)
         .setSampleSizeRatio(0.4)
         .setResponseVariableName("c4");
     var dataframe = Dataframes.csvTrainTest(arg, ",", "\"", false).shuffle();
     var dfSplit = dataframe.setSplitValue(0.4).split();
-    decisionTreeClassifier.train(dfSplit.train());
-    var newDf = decisionTreeClassifier.predict(dfSplit.test());
+    randomForestClassifier.train(dfSplit.train());
+    var newDf = randomForestClassifier.predict(dfSplit.test());
     newDf.show(0, 150);
   }
 }
