@@ -2,6 +2,7 @@ package org.rsultan.core.regression;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.of;
+import static org.rsultan.utils.TestUtils.getResourceFileName;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,11 +20,6 @@ public class LinearRegressionTest {
 
   static {
     Nd4j.setDefaultDataTypes(DataType.DOUBLE, DataType.DOUBLE);
-  }
-
-  public static String getResourceFileName(String resourcePath) {
-    var classLoader = CSVUtilsTest.class.getClassLoader();
-    return new File(classLoader.getResource(resourcePath).getFile()).toString();
   }
 
   private static Stream<Arguments> params_that_must_apply_linear_regression() {

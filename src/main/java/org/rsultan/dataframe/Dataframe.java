@@ -5,8 +5,10 @@ import static java.lang.Math.min;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.IntStream.range;
 import static java.util.stream.Stream.of;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -27,9 +29,9 @@ import org.rsultan.dataframe.transform.matrix.MatrixTransform;
 
 public class Dataframe implements MapTransform, FilterTransform, MatrixTransform {
 
-  private final Map<String, List<?>> data;
+  private final Map<?, List<?>> data;
   private final Column<?>[] columns;
-  private final int rows;
+  private final int rowSize;
 
   private final MapTransform mapTransform;
   private final FilterTransform filterTransform;
@@ -43,18 +45,39 @@ public class Dataframe implements MapTransform, FilterTransform, MatrixTransform
     if (sizes.size() > 1) {
       throw new IllegalArgumentException("Dataframe column values should have the same size");
     }
-    this.rows = !sizes.isEmpty() ? sizes.get(0) : 0;
+    this.rowSize = !sizes.isEmpty() ? sizes.get(0) : 0;
 
     this.mapTransform = new MapDataframe(this);
     this.filterTransform = new FilterDataframe(this);
     this.matrixTransform = new MatrixDataframe(this);
   }
 
+  Dataframe(String[] columnNames, Row[] rows) {
+    this(getColumnsFromRows(columnNames, rows));
+  }
+
+  private static Column<?>[] getColumnsFromRows(String[] columnNames, Row[] rows) {
+    var sizes = stream(rows).map(Row::values).map(List::size).distinct().collect(toList());
+    if (sizes.size() > 1) {
+      throw new IllegalArgumentException("Dataframe row values should have the same size");
+    }
+    if (columnNames.length != sizes.get(0)) {
+      throw new IllegalArgumentException(
+          "Dataframe row values should have the same size has the columns");
+    }
+    return range(0, columnNames.length).mapToObj(idx -> {
+      var column = new Column<>(columnNames[idx], new ArrayList<>());
+      stream(rows).parallel().map(row -> row.values().get(idx))
+          .forEachOrdered(column.values()::add);
+      return column;
+    }).toArray(Column[]::new);
+  }
+
   public Dataframe select(String... columnNames) {
-    var colNameList = List.of(columnNames);
     return Dataframes.create(
-        of(columns)
-            .filter(column -> colNameList.contains(column.columnName())).toArray(Column[]::new)
+        stream(columnNames)
+            .map(colName -> new Column<>(colName, this.get(colName)))
+            .toArray(Column[]::new)
     );
   }
 
@@ -111,14 +134,14 @@ public class Dataframe implements MapTransform, FilterTransform, MatrixTransform
   }
 
   public void show(int start, int end) {
-    DataframePrinter.create(data).print(max(0, start), min(end, this.rows));
+    DataframePrinter.create(data).print(max(0, start), min(end, this.rowSize));
   }
 
   public void tail() {
-    show(this.rows - 10, this.rows);
+    show(this.rowSize - 10, this.rowSize);
   }
 
-  public <T> List<T> get(String column) {
+  public <T> List<T> get(Object column) {
     return List.copyOf((List<T>) data.get(column));
   }
 
@@ -130,11 +153,11 @@ public class Dataframe implements MapTransform, FilterTransform, MatrixTransform
     return columns;
   }
 
-  public int getRows() {
-    return rows;
+  public int getRowSize() {
+    return rowSize;
   }
 
-  public Map<String, List<?>> getData() {
+  public Map<?, List<?>> getData() {
     return data;
   }
 }
