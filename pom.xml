@@ -6,7 +6,7 @@
 
   <groupId>org.rsultan</groupId>
   <artifactId>java-ml</artifactId>
-  <version>1.2.1-SNAPSHOT</version>
+  <version>1.2.2-SNAPSHOT</version>
   <name>java-ml</name>
 
   <distributionManagement>

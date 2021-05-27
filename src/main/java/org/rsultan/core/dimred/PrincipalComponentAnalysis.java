@@ -2,9 +2,11 @@ package org.rsultan.core.dimred;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
+import static org.nd4j.common.util.ArrayUtil.argsort;
 import static org.nd4j.linalg.eigen.Eigen.symmetricGeneralizedEigenvalues;
 
 import java.util.List;
+import org.nd4j.common.util.ArrayUtil;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.rsultan.core.Trainable;
 import org.rsultan.dataframe.Column;
@@ -39,8 +41,12 @@ public class PrincipalComponentAnalysis implements Trainable<PrincipalComponentA
     LOG.info("computing covariance matrix");
     LOG.info("computing eighenvectors");
     eighenVectors = Matrices.covariance(X);
-    symmetricGeneralizedEigenvalues(eighenVectors, true);
-    eighenVectors = eighenVectors.getColumns(range(0, components).toArray());
+    var eighenValuesArgSort = argsort(
+        symmetricGeneralizedEigenvalues(eighenVectors, true).toIntVector(), false
+    );
+    eighenVectors = eighenVectors
+        .getColumns(eighenValuesArgSort)
+        .getColumns(range(0, components).toArray());
     return this;
   }
 

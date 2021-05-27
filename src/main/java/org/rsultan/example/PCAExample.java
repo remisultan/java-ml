@@ -18,7 +18,7 @@ public class PCAExample {
 
   public static void main(String[] args) throws IOException {
     var df = Dataframes.csv(args[0], ",", "\"", false);
-    var PCA = new PrincipalComponentAnalysis(2)
+    var PCA = new PrincipalComponentAnalysis(1)
         .setResponseVariable("c4")
         .train(df);
 

@@ -28,7 +28,7 @@ public class RandomForestRegressor extends RandomForestLearning {
 
   @Override
   protected DecisionTreeLearning buildDecisionTreeLearning() {
-    return new RandomForestClassifierTree(treeDepth, featureNames)
+    return new RandomForestRegressorTree(treeDepth, featureNames)
         .setResponseVariableName(responseVariableName)
         .setPredictionColumnName(predictionColumnName);
   }
@@ -44,11 +44,11 @@ public class RandomForestRegressor extends RandomForestLearning {
     return stream(bestResponses).boxed().collect(toList());
   }
 
-  private static class RandomForestClassifierTree extends DecisionTreeRegressor {
+  private static class RandomForestRegressorTree extends DecisionTreeRegressor {
 
     private final List<?> parentFeatureNames;
 
-    public RandomForestClassifierTree(
+    public RandomForestRegressorTree(
         int depth,
         List<?> parentFeatureNames) {
       super(depth);
