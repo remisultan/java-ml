@@ -21,9 +21,9 @@ public class PrincipalComponentAnalysisTest {
 
   private static Stream<Arguments> params_must_apply_PCA_to_dataframe() {
     return Stream.of(
-        Arguments.of(new PrincipalComponentAnalysis(1).setResponseVariable("strColumn"), 2, 0.708),
-        Arguments.of(new PrincipalComponentAnalysis(2).setResponseVariable("strColumn"), 3, 0.708),
-        Arguments.of(new PrincipalComponentAnalysis(3).setResponseVariable("strColumn"), 4, 0.709),
+        Arguments.of(new PrincipalComponentAnalysis(1).setResponseVariable("strColumn"), 2, 0.9997709698637104),
+        Arguments.of(new PrincipalComponentAnalysis(2).setResponseVariable("strColumn"), 3, 0.9999991213055501),
+        Arguments.of(new PrincipalComponentAnalysis(3).setResponseVariable("strColumn"), 4, 0.9999991213055501),
         Arguments.of(new PrincipalComponentAnalysis(4).setResponseVariable("strColumn"), 5, 1.0)
     );
   }
