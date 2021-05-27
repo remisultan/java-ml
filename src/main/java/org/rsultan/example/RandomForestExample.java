@@ -31,16 +31,16 @@ public class RandomForestExample {
   }
 
   private static void regressor(String arg) throws IOException {
-    var radomForestRegression = new RandomForestRegressor(10)
+    var randomForestRegression = new RandomForestRegressor(10)
         .setTreeDepth(3)
         .setSampleFeatureSize(2)
         .setSampleSizeRatio(0.4);
     var dataframe = Dataframes.csvTrainTest(arg, ";").shuffle();
     var dfSplit = dataframe.setSplitValue(0.5).split();
-    radomForestRegression
+    randomForestRegression
         .setResponseVariableName("alcohol")
         .train(dfSplit.train());
-    var newDf = radomForestRegression.predict(dfSplit.test());
+    var newDf = randomForestRegression.predict(dfSplit.test());
     newDf.show(0, 15000);
   }
 
