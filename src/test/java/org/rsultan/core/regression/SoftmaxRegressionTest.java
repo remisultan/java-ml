@@ -2,12 +2,12 @@ package org.rsultan.core.regression;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.of;
+import static org.rsultan.core.ModelSerdeTestUtils.serdeTrainable;
 import static org.rsultan.core.regularization.Regularization.LASSO;
 import static org.rsultan.core.regularization.Regularization.NONE;
 import static org.rsultan.core.regularization.Regularization.RIDGE;
 import static org.rsultan.utils.TestUtils.getResourceFileName;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -18,7 +18,6 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.rsultan.core.regression.impl.SoftmaxRegression;
 import org.rsultan.core.regularization.Regularization;
 import org.rsultan.dataframe.Dataframes;
-import org.rsultan.utils.CSVUtilsTest;
 
 public class SoftmaxRegressionTest {
 
@@ -58,6 +57,30 @@ public class SoftmaxRegressionTest {
         .setLambda(0.1)
         .setLossAccuracyOffset(10)
         .train(dataframe);
+    softmaxRegression.getHistory().tail();
+
+    var dfPredict = softmaxRegression.predict(dataframe);
+    assertThat(dfPredict.<String>get("predictions").stream().toArray())
+        .containsExactly(expectedPredictions);
+  }
+
+  @ParameterizedTest
+  @MethodSource("params_that_must_apply_softmax_regression")
+  public void must_serde_and_apply_softmax_regression(
+      String responseVariable,
+      Regularization regularization,
+      String[] predictors,
+      String[] expectedPredictions
+  ) throws IOException {
+    var dataframe = Dataframes.csv(getResourceFileName("org/rsultan/utils/example-classif.csv"));
+    var softmaxRegression = serdeTrainable(new SoftmaxRegression(100, 0.1)
+        .setPredictorNames(predictors)
+        .setResponseVariableName(responseVariable)
+        .setRegularization(regularization)
+        .setPredictionColumnName("predictions")
+        .setLambda(0.1)
+        .setLossAccuracyOffset(10)
+        .train(dataframe));
     softmaxRegression.getHistory().tail();
 
     var dfPredict = softmaxRegression.predict(dataframe);

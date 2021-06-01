@@ -23,12 +23,12 @@ import org.rsultan.dataframe.Dataframe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class DecisionTreeLearning
-    extends ModelParameters<DecisionTreeLearning>
-    implements Trainable<DecisionTreeLearning> {
+public abstract class DecisionTreeLearning extends ModelParameters<DecisionTreeLearning> implements
+    Trainable<DecisionTreeLearning> {
 
   private static final Logger LOG = LoggerFactory.getLogger(DecisionTreeLearning.class);
-  protected final ExecutorService executor = Executors.newCachedThreadPool();
+
+  protected transient final ExecutorService executor = Executors.newCachedThreadPool();
   protected final int depth;
   protected final ImpurityStrategy strategy;
 

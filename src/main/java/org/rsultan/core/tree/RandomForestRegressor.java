@@ -17,6 +17,30 @@ public class RandomForestRegressor extends RandomForestLearning {
   }
 
   @Override
+  public RandomForestRegressor train(Dataframe dataframe) {
+    super.train(dataframe);
+    return this;
+  }
+
+  @Override
+  public RandomForestRegressor setResponseVariableName(String responseVariableName) {
+    super.setResponseVariableName(responseVariableName);
+    return this;
+  }
+
+  @Override
+  public RandomForestRegressor setPredictionColumnName(String name) {
+    super.setPredictionColumnName(name);
+    return this;
+  }
+
+  @Override
+  public RandomForestRegressor setPredictorNames(String... names) {
+    super.setPredictorNames(names);
+    return this;
+  }
+
+  @Override
   protected List<?> getResponseValues(Dataframe dataframe) {
     return dataframe.get(responseVariableName);
   }
@@ -42,6 +66,24 @@ public class RandomForestRegressor extends RandomForestLearning {
   protected List<?> getFinalPredictions(INDArray predictionMatrix) {
     double[] bestResponses = predictionMatrix.mean(true, 0).toDoubleVector();
     return stream(bestResponses).boxed().collect(toList());
+  }
+
+  @Override
+  public RandomForestRegressor setSampleSizeRatio(double sampleSizeRatio) {
+    super.setSampleSizeRatio(sampleSizeRatio);
+    return this;
+  }
+
+  @Override
+  public RandomForestRegressor setTreeDepth(int treeDepth) {
+    super.setTreeDepth(treeDepth);
+    return this;
+  }
+
+  @Override
+  public RandomForestRegressor setSampleFeatureSize(int sampleFeatures) {
+    super.setSampleFeatureSize(sampleFeatures);
+    return this;
   }
 
   private static class RandomForestRegressorTree extends DecisionTreeRegressor {

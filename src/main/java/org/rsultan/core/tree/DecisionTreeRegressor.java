@@ -14,6 +14,30 @@ public class DecisionTreeRegressor extends DecisionTreeLearning {
   }
 
   @Override
+  public DecisionTreeRegressor train(Dataframe dataframe) {
+    super.train(dataframe);
+    return this;
+  }
+
+  @Override
+  public DecisionTreeRegressor setResponseVariableName(String responseVariableName) {
+    super.setResponseVariableName(responseVariableName);
+    return this;
+  }
+
+  @Override
+  public DecisionTreeRegressor setPredictionColumnName(String name) {
+    super.setPredictionColumnName(name);
+    return this;
+  }
+
+  @Override
+  public DecisionTreeRegressor setPredictorNames(String... names) {
+    super.setPredictorNames(names);
+    return this;
+  }
+
+  @Override
   protected Double computePredictedResponse(INDArray array) {
     return array.mean().getDouble(0, 0);
   }

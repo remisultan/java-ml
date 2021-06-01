@@ -3,9 +3,10 @@ package org.rsultan.dataframe;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
 
+import java.io.Serializable;
 import java.util.List;
 
-public record Column<T>(String columnName, List<T> values) {
+public record Column<T>(String columnName, List<T> values) implements Serializable {
 
   public Column(String columnName, T... values) {
     this(columnName, stream(values).collect(toList()));

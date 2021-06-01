@@ -7,6 +7,7 @@ import static org.apache.commons.lang3.RandomUtils.nextFloat;
 import static org.apache.commons.lang3.RandomUtils.nextInt;
 import static org.apache.commons.lang3.RandomUtils.nextLong;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.rsultan.core.ModelSerdeTestUtils.serdeTrainable;
 
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -64,5 +65,27 @@ public class KMedoidsTest {
     assertThat(kMedoids.getLoss()).isNotNull();
     assertThat(kMedoids.getWCSS()).isNotNull();
     assertThat(kMedoids.predict(dataframe)).isNotNull();
+  }
+
+  @ParameterizedTest
+  @MethodSource("params_that_must_apply_kmedoids")
+  public void must_serde_and_apply_kmedoids(KMedoids kMedoids) {
+    var dataframe = Dataframes.create(
+        new Column<>("c1", range(0, 100).map(idx -> nextLong(0, 100)).boxed().collect(toList())),
+        new Column<>("c2",
+            range(0, 100).mapToDouble(idx -> nextDouble(0, 100)).boxed().collect(toList())),
+        new Column<>("c3", range(0, 100).boxed().map(idx -> nextFloat(0, 100)).collect(toList())),
+        new Column<>("c4", range(0, 100).boxed().map(idx -> nextInt(0, 100)).collect(toList()))
+    );
+    var kMedoid = serdeTrainable(kMedoids.train(dataframe));
+    kMedoid.showMetrics();
+
+    assertThat(kMedoid.getK()).isNotNull();
+    assertThat(kMedoid.getCentroids()).isNotNull();
+    assertThat(kMedoid.getCluster()).isNotNull();
+    assertThat(kMedoid.getCentroids().rows()).isEqualTo(kMedoids.getK());
+    assertThat(kMedoid.getLoss()).isNotNull();
+    assertThat(kMedoid.getWCSS()).isNotNull();
+    assertThat(kMedoid.predict(dataframe)).isNotNull();
   }
 }

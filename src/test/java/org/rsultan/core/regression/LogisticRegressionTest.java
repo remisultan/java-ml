@@ -2,6 +2,7 @@ package org.rsultan.core.regression;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.of;
+import static org.rsultan.core.ModelSerdeTestUtils.serdeTrainable;
 import static org.rsultan.core.regularization.Regularization.LASSO;
 import static org.rsultan.core.regularization.Regularization.NONE;
 import static org.rsultan.core.regularization.Regularization.RIDGE;
@@ -66,6 +67,32 @@ public class LogisticRegressionTest {
         .setChosenLabel(label);
     logisticRegression.setLossAccuracyOffset(10);
     logisticRegression.train(dataframe);
+    logisticRegression.getHistory().tail();
+
+    var dfPredict = logisticRegression.predict(dataframe);
+    assertThat(dfPredict.<String>get("predictions").stream().toArray())
+        .containsExactly(expectedPredictions);
+  }
+
+  @ParameterizedTest
+  @MethodSource("params_that_must_apply_logistic_regression")
+  public void must_serde_and_apply_logistic_regression(
+      String responseVariable,
+      String label,
+      Regularization regularization,
+      String[] predictors,
+      String[] expectedPredictions
+  ) throws IOException {
+    var dataframe = Dataframes.csv(getResourceFileName("org/rsultan/utils/example-classif.csv"));
+    var logisticRegression = new LogisticRegression(100, 0.5)
+        .setPredictorNames(predictors)
+        .setResponseVariableName(responseVariable)
+        .setRegularization(regularization)
+        .setLambda(0.1)
+        .setPredictionColumnName("predictions")
+        .setChosenLabel(label);
+    logisticRegression.setLossAccuracyOffset(10);
+    logisticRegression = serdeTrainable(logisticRegression.train(dataframe));
     logisticRegression.getHistory().tail();
 
     var dfPredict = logisticRegression.predict(dataframe);

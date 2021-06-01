@@ -53,6 +53,8 @@ public class RandomForestLearningTest {
     var dataframe = Dataframes.csv(getResourceFileName("org/rsultan/utils/example-classif.csv"));
     var predictions = decisionTreeClassifier
         .setResponseVariableName("strColumn")
+        .setPredictionColumnName("predictions")
+        .setPredictorNames("x", "x2", "x3")
         .setTreeDepth(treeDepth)
         .setSampleFeatureSize(sampleFeatures)
         .setSampleSizeRatio(sampleSizeRatio)
@@ -61,7 +63,6 @@ public class RandomForestLearningTest {
         .get("predictions");
 
     assertThat(predictions).hasSize(5);
-
   }
 
   @ParameterizedTest
@@ -71,11 +72,11 @@ public class RandomForestLearningTest {
       int treeDepth,
       int sampleFeatures,
       double sampleSizeRatio
-  )
-      throws IOException {
+  ) throws IOException {
     var dataframe = Dataframes.csv(getResourceFileName("org/rsultan/utils/example-classif.csv"));
     var predictions = decisionTreeRegressor
         .setResponseVariableName("y")
+        .setPredictionColumnName("predictions")
         .setPredictorNames("x", "x2", "x3")
         .setTreeDepth(treeDepth)
         .setSampleFeatureSize(sampleFeatures)

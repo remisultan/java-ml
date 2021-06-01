@@ -24,7 +24,7 @@ public abstract class RandomForestLearning extends ModelParameters<RandomForestL
 
   private static final Logger LOG = LoggerFactory.getLogger(RandomForestLearning.class);
   private final int numberOfEstimators;
-  private final ExecutorService executor;
+  private transient final ExecutorService executor;
 
   protected double sampleSizeRatio = 0.25;
   protected int treeDepth = 1;
