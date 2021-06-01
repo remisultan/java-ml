@@ -1,14 +1,11 @@
 package org.rsultan.dataframe.transform.filter;
 
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.IntStream.range;
-
-import java.util.List;
+import java.io.Serializable;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import org.rsultan.dataframe.Dataframe;
 
-public interface FilterTransform {
+public interface FilterTransform extends Serializable {
 
   <SOURCE1> Dataframe filter(String columnName, Predicate<SOURCE1> predicate);
 

@@ -24,6 +24,48 @@ public class RandomForestClassifier extends RandomForestLearning {
   }
 
   @Override
+  public RandomForestClassifier train(Dataframe dataframe) {
+    super.train(dataframe);
+    return this;
+  }
+
+  @Override
+  public RandomForestClassifier setResponseVariableName(String responseVariableName) {
+    super.setResponseVariableName(responseVariableName);
+    return this;
+  }
+
+  @Override
+  public RandomForestClassifier setPredictionColumnName(String name) {
+    super.setPredictionColumnName(name);
+    return this;
+  }
+
+  @Override
+  public RandomForestClassifier setPredictorNames(String... names) {
+    super.setPredictorNames(names);
+    return this;
+  }
+
+  @Override
+  public RandomForestClassifier setSampleSizeRatio(double sampleSizeRatio) {
+    super.setSampleSizeRatio(sampleSizeRatio);
+    return this;
+  }
+
+  @Override
+  public RandomForestClassifier setTreeDepth(int treeDepth) {
+    super.setTreeDepth(treeDepth);
+    return this;
+  }
+
+  @Override
+  public RandomForestClassifier setSampleFeatureSize(int sampleFeatures) {
+    super.setSampleFeatureSize(sampleFeatures);
+    return this;
+  }
+
+  @Override
   protected List<?> getResponseValues(Dataframe dataframe) {
     return dataframe.get(responseVariableName).stream().sorted().distinct().collect(toList());
   }

@@ -1,8 +1,9 @@
 package org.rsultan.core;
 
+import java.io.Serializable;
 import java.util.stream.Stream;
 
-public abstract class ModelParameters<T> {
+public abstract class ModelParameters<T> implements Serializable {
 
   protected String responseVariableName = "y";
   protected String predictionColumnName = "predictions";

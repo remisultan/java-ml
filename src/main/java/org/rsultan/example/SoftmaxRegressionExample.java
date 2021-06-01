@@ -11,6 +11,7 @@ import org.rsultan.dataframe.Dataframes;
 
 public class SoftmaxRegressionExample {
 
+
   /*
    The data used is the infamous IRIS dataset
    Make sure args[0] & args[1] /path/to/your/src/main/resources/softmax/iris.data

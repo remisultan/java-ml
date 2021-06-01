@@ -14,6 +14,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.factory.Nd4j;
+import org.rsultan.core.ModelSerdeTestUtils;
 import org.rsultan.core.clustering.medoidshift.MeanShift;
 import org.rsultan.core.clustering.medoidshift.MedianShift;
 import org.rsultan.core.clustering.medoidshift.MedoidShift;
@@ -26,7 +27,7 @@ public class MedoidShiftTest {
     Nd4j.setDefaultDataTypes(DataType.DOUBLE, DataType.DOUBLE);
   }
 
-  private static Stream<Arguments> params_that_must_apply_kmedoids() {
+  private static Stream<Arguments> params_must_apply_medoid_shift() {
     return Stream.of(
         Arguments.of(new MeanShift(60D, 30)),
         Arguments.of(new MeanShift(65D, 30)),
@@ -38,8 +39,8 @@ public class MedoidShiftTest {
   }
 
   @ParameterizedTest
-  @MethodSource("params_that_must_apply_kmedoids")
-  public void must_apply_kmedoids(MedoidShift medoidShift) {
+  @MethodSource("params_must_apply_medoid_shift")
+  public void must_apply_medoid_shift(MedoidShift medoidShift) {
     var dataframe = Dataframes.create(
         new Column<>("c1", range(0, 20).map(idx -> nextLong(0, 10)).boxed().collect(toList())),
         new Column<>("c2",
@@ -48,6 +49,23 @@ public class MedoidShiftTest {
         new Column<>("c4", range(0, 20).boxed().map(idx -> nextInt(0, 10)).collect(toList()))
     );
     medoidShift = medoidShift.train(dataframe);
+    medoidShift.showMetrics();
+
+    assertThat(medoidShift.getCentroids()).isNotNull();
+    assertThat(medoidShift.predict(dataframe)).isNotNull();
+  }
+
+  @ParameterizedTest
+  @MethodSource("params_must_apply_medoid_shift")
+  public void must_serde_apply_medoid_shift(MedoidShift medoidShift) {
+    var dataframe = Dataframes.create(
+        new Column<>("c1", range(0, 20).map(idx -> nextLong(0, 10)).boxed().collect(toList())),
+        new Column<>("c2",
+            range(0, 20).mapToDouble(idx -> nextDouble(0, 10)).boxed().collect(toList())),
+        new Column<>("c3", range(0, 20).boxed().map(idx -> nextFloat(0, 10)).collect(toList())),
+        new Column<>("c4", range(0, 20).boxed().map(idx -> nextInt(0, 10)).collect(toList()))
+    );
+    medoidShift = ModelSerdeTestUtils.serdeTrainable(medoidShift.train(dataframe));
     medoidShift.showMetrics();
 
     assertThat(medoidShift.getCentroids()).isNotNull();

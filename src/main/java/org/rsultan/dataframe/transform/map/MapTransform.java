@@ -1,11 +1,12 @@
 package org.rsultan.dataframe.transform.map;
 
+import java.io.Serializable;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.rsultan.dataframe.Dataframe;
 
-public interface MapTransform {
+public interface MapTransform extends Serializable {
 
   <T> Dataframe map(String columnName, Supplier<T> supplier);
 

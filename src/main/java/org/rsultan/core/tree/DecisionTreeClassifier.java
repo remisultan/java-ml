@@ -51,6 +51,24 @@ public class DecisionTreeClassifier extends DecisionTreeLearning {
   }
 
   @Override
+  public DecisionTreeClassifier setResponseVariableName(String responseVariableName) {
+    super.setResponseVariableName(responseVariableName);
+    return this;
+  }
+
+  @Override
+  public DecisionTreeClassifier setPredictionColumnName(String name) {
+    super.setPredictionColumnName(name);
+    return this;
+  }
+
+  @Override
+  public DecisionTreeClassifier setPredictorNames(String... names) {
+    super.setPredictorNames(names);
+    return this;
+  }
+
+  @Override
   protected Object getPredictionNodeFeatureName(Node node) {
     return features.get(node.feature());
   }
