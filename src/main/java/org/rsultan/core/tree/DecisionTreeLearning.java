@@ -1,10 +1,10 @@
 package org.rsultan.core.tree;
 
-import static java.util.Arrays.stream;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -13,70 +13,46 @@ import java.util.concurrent.Future;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.rsultan.core.ModelParameters;
-import org.rsultan.core.Trainable;
 import org.rsultan.core.tree.domain.BestSplit;
 import org.rsultan.core.tree.domain.Node;
 import org.rsultan.core.tree.impurity.ImpurityService;
 import org.rsultan.core.tree.impurity.ImpurityStrategy;
-import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class DecisionTreeLearning extends ModelParameters<DecisionTreeLearning> implements
-    Trainable<DecisionTreeLearning> {
+public abstract class DecisionTreeLearning extends ModelParameters<DecisionTreeLearning> {
 
   private static final Logger LOG = LoggerFactory.getLogger(DecisionTreeLearning.class);
 
   protected transient final ExecutorService executor = Executors.newCachedThreadPool();
   protected final int depth;
-  protected final ImpurityStrategy strategy;
-
+  protected final ImpurityService impurityService;
   protected Node tree;
   protected List<?> responses;
   protected List<?> features;
-  protected ImpurityService impurityService;
 
   public DecisionTreeLearning(int depth, ImpurityStrategy strategy) {
     this.depth = depth > 0 ? depth : 1;
-    this.strategy = strategy;
+    this.impurityService = strategy.getImpurityService();
+
   }
 
   protected abstract <T extends Number> T computePredictedResponse(INDArray array);
 
   protected abstract <T> T getNodePrediction(Node number);
 
-  protected abstract List<?> getResponseValues(Dataframe dataframe);
+  protected abstract <T> T getPredictionNodeFeatureName(Node node);
 
-  protected abstract INDArray buildY(Dataframe dataframe);
-
-  @Override
-  public DecisionTreeLearning train(Dataframe dataframe) {
-    var dfNoResponse = dataframe.mapWithout(responseVariableName);
-    var dfFeatures =
-        predictorNames.length == 0 ? dfNoResponse : dfNoResponse.select(predictorNames);
-    var featureNames = stream(dfFeatures.getColumns()).map(Column::columnName).collect(toList());
-    var responses = getResponseValues(dataframe);
-    return train(dfFeatures.toMatrix(), buildY(dataframe), featureNames, responses);
-  }
-
-  DecisionTreeLearning train(INDArray X, INDArray Y, List<?> features, List<?> responses) {
-    impurityService = strategy.getImpurityService(responses.size());
-    this.features = features;
-    this.responses = responses;
+  public DecisionTreeLearning train(INDArray X, INDArray Y) {
     this.tree = buildTree(X, Y, depth);
     return this;
   }
 
-  @Override
-  public Dataframe predict(Dataframe dataframe) {
-    return dataframe.addColumn(new Column<>(predictionColumnName, rawPredict(dataframe)));
-  }
-
-  protected <T> List<T> rawPredict(Dataframe dataframe) {
-    return range(0, dataframe.getRowSize()).mapToObj(row -> {
+  public <T> List<T> predict(int numRows, Dataframe dataframe) {
+    return range(0, numRows).mapToObj(row -> {
       var node = tree;
-      while (nonNull(node.left())) {
+      while (nonNull(node) && nonNull(node.left())) {
         var featureName = getPredictionNodeFeatureName(node);
         double featureValue = dataframe.<Number>get(featureName).get(row).doubleValue();
         node = featureValue < node.featureThreshold() ? node.left() : node.right();
@@ -84,8 +60,6 @@ public abstract class DecisionTreeLearning extends ModelParameters<DecisionTreeL
       return this.<T>getNodePrediction(node);
     }).collect(toList());
   }
-
-  protected abstract <T> T getPredictionNodeFeatureName(Node node);
 
   protected Node buildTree(INDArray features, INDArray response, int currentDepth) {
     if (currentDepth < 0) {
@@ -133,15 +107,17 @@ public abstract class DecisionTreeLearning extends ModelParameters<DecisionTreeL
   protected BestSplit getBestSplit(INDArray response, INDArray sortedFeatures,
       INDArray sortedLabels) {
     var classCount = impurityService.getClassCount(response);
+    var responseValues = new ArrayList<>(classCount.keySet());
+    var valueCount = Nd4j.create(new ArrayList<>(classCount.values()));
     final double maxRows = sortedLabels.rows();
-    var bestSplit = new BestSplit(0, 0, impurityService.compute(classCount).getDouble(0, 0));
+    var bestSplit = new BestSplit(0, 0, impurityService.compute(valueCount).getDouble(0, 0));
     for (int featureIdx = 0; featureIdx < sortedFeatures.columns(); featureIdx++) {
       var thresholds = sortedFeatures.getColumn(featureIdx);
       var labels = sortedLabels.getColumn(featureIdx);
-      var left = Nd4j.zeros(1, responses.size());
-      var right = classCount.dup();
+      var left = Nd4j.zeros(1, valueCount.length());
+      var right = valueCount.dup();
       for (int splitIdx = 1; splitIdx < maxRows; splitIdx++) {
-        var classVal = labels.getInt(splitIdx - 1);
+        var classVal = responseValues.indexOf(labels.getDouble(splitIdx - 1));
         left.putScalar(classVal, left.getInt(classVal) + 1);
         right.putScalar(classVal, right.getInt(classVal) - 1);
         double currentThreshold = thresholds.getDouble(splitIdx);
@@ -191,5 +167,10 @@ public abstract class DecisionTreeLearning extends ModelParameters<DecisionTreeL
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
+  }
+
+  public DecisionTreeLearning setFeatures(List<?> features) {
+    this.features = features;
+    return this;
   }
 }

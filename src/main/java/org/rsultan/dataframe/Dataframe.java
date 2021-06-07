@@ -74,7 +74,7 @@ public class Dataframe implements MapTransform, FilterTransform, MatrixTransform
   }
 
   public Dataframe select(String... columnNames) {
-    return Dataframes.create(
+    return columnNames.length == 0 ? this : Dataframes.create(
         stream(columnNames)
             .map(colName -> new Column<>(colName, this.get(colName)))
             .toArray(Column[]::new)

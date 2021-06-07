@@ -7,13 +7,9 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 
 public class RmseService extends AbstractImpurityService {
 
-  public RmseService(int totalLabels) {
-    super(totalLabels);
-  }
-
   @Override
   public INDArray compute(INDArray Y) {
-    var mse = pow(Y.sub(Y.mean()), 2).sum(true, 1).div(Y.columns());
+    var mse = pow(Y.sub(Y.mean()), 2).reshape(1, Y.length()).sum(true, 1).div(Y.columns());
     return sqrt(mse);
   }
 }

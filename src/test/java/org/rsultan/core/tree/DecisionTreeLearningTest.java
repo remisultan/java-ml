@@ -102,7 +102,7 @@ public class DecisionTreeLearningTest {
         .predict(dataframe)
         .get("predictions");
 
-    assertThat(predictions).containsExactly(2.5D, 2.5D, 2.5D, 2.5D, 5.0D);
+    assertThat(predictions).containsExactly(3.0, 3.0, 3.0, 3.0, 3.0);
   }
 
   @ParameterizedTest
@@ -118,6 +118,6 @@ public class DecisionTreeLearningTest {
         .predict(dataframe)
         .get("predictions");
 
-    assertThat(predictions).containsExactly(2.5D, 2.5D, 2.5D, 2.5D, 5.0D);
+    assertThat(predictions).containsExactly(3.0, 3.0, 3.0, 3.0, 3.0);
   }
 }
