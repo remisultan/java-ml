@@ -8,8 +8,8 @@ import java.io.IOException;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.factory.Nd4j;
 import org.rsultan.core.Models;
-import org.rsultan.core.tree.RandomForestClassifier;
-import org.rsultan.core.tree.RandomForestRegressor;
+import org.rsultan.core.ensemble.rf.RandomForestClassifier;
+import org.rsultan.core.ensemble.rf.RandomForestRegressor;
 import org.rsultan.dataframe.Dataframes;
 
 public class RandomForestExample {
