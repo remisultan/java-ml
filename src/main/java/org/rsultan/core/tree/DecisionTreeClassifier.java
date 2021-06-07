@@ -1,20 +1,42 @@
 package org.rsultan.core.tree;
 
-import static java.util.Objects.isNull;
+import static java.util.Arrays.stream;
+import static java.util.Map.Entry.comparingByValue;
 import static java.util.stream.Collectors.toList;
-import static org.nd4j.linalg.factory.Nd4j.argMax;
 
-import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.rsultan.core.Trainable;
 import org.rsultan.core.tree.domain.Node;
 import org.rsultan.core.tree.impurity.ImpurityStrategy;
+import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframe;
 
-public class DecisionTreeClassifier extends DecisionTreeLearning {
+public class DecisionTreeClassifier extends DecisionTreeLearning implements
+    Trainable<DecisionTreeClassifier> {
 
   public DecisionTreeClassifier(int depth, ImpurityStrategy strategy) {
     super(depth, strategy);
+  }
+
+  @Override
+  public DecisionTreeClassifier train(Dataframe dataframe) {
+    var dfNoResponse = dataframe.mapWithout(responseVariableName);
+    var dfFeatures =
+        predictorNames.length == 0 ? dfNoResponse : dfNoResponse.select(predictorNames);
+    features = stream(dfFeatures.getColumns()).map(Column::columnName).collect(toList());
+    responses = dataframe.get(responseVariableName).stream().sorted().distinct()
+        .collect(toList());
+    train(dfFeatures.toMatrix(), buildY(dataframe));
+    return this;
+  }
+
+  @Override
+  public Dataframe predict(Dataframe dataframe) {
+    var predictions = new Column<>(predictionColumnName,
+        this.predict(dataframe.getRowSize(), dataframe.select(predictorNames)));
+    return dataframe.addColumn(predictions);
   }
 
   @Override
@@ -22,32 +44,16 @@ public class DecisionTreeClassifier extends DecisionTreeLearning {
     return responses.get(node.predictedResponse().intValue());
   }
 
-  @Override
-  protected List<?> getResponseValues(Dataframe dataframe) {
-    return dataframe.get(responseVariableName).stream().sorted().distinct()
-        .collect(toList());
-  }
-
-  @Override
   protected INDArray buildY(Dataframe dataframe) {
-    if (isNull(responses)) {
-      responses = getResponseValues(dataframe);
-    }
     var columnTemp = UUID.randomUUID().toString();
-    return dataframe.map(columnTemp, responses::indexOf, responseVariableName)
-        .toMatrix(columnTemp);
+    return dataframe.map(columnTemp, responses::indexOf, responseVariableName).toMatrix(columnTemp);
   }
 
   @Override
-  protected Integer computePredictedResponse(INDArray array) {
-    var classCount = impurityService.getClassCount(array);
-    return argMax(classCount).getInt(0, 0);
-  }
-
-  @Override
-  public DecisionTreeClassifier train(Dataframe dataframe) {
-    super.train(dataframe);
-    return this;
+  protected Double computePredictedResponse(INDArray array) {
+    return impurityService.getClassCount(array).entrySet().stream()
+        .max(comparingByValue()).orElse(Map.entry(0D, 0L))
+        .getKey();
   }
 
   @Override

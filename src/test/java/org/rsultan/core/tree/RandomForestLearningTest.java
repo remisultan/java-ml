@@ -13,6 +13,8 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.factory.Nd4j;
+import org.rsultan.core.ensemble.rf.RandomForestClassifier;
+import org.rsultan.core.ensemble.rf.RandomForestRegressor;
 import org.rsultan.dataframe.Dataframes;
 
 public class RandomForestLearningTest {
