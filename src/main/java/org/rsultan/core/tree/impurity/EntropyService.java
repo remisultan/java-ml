@@ -8,13 +8,9 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 
 public class EntropyService extends AbstractImpurityService {
 
-  public EntropyService(int totalLabels) {
-    super(totalLabels);
-  }
-
   @Override
   public INDArray compute(INDArray classCount) {
-    var probabilities = computeProbabilities(classCount);
+    var probabilities = computeProbabilities(classCount.reshape(1, classCount.length()));
     var logProb = log(probabilities, 2, true).neg();
     replaceWhere(logProb, 0.0, isInfinite());
     return probabilities.mul(logProb).sum(true, 1);

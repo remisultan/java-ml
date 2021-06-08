@@ -2,6 +2,7 @@ package org.rsultan.core.tree;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.of;
+import static org.rsultan.core.ModelSerdeTestUtils.serdeTrainable;
 import static org.rsultan.core.tree.impurity.ImpurityStrategy.ENTROPY;
 import static org.rsultan.core.tree.impurity.ImpurityStrategy.GINI;
 import static org.rsultan.utils.TestUtils.getResourceFileName;
@@ -32,7 +33,7 @@ public class DecisionTreeLearningTest {
         of(new DecisionTreeClassifier(2, GINI), new String[]{"y", "x", "x2", "x3"},
             new String[]{"a", "a", "b", "b", "e"}),
         of(new DecisionTreeClassifier(-1, ENTROPY), new String[]{"y", "x", "x2", "x3"},
-                new String[]{"a", "a", "b", "b", "b"}),
+            new String[]{"a", "a", "b", "b", "b"}),
         of(new DecisionTreeClassifier(0, ENTROPY), new String[]{"y", "x", "x2", "x3"},
             new String[]{"a", "a", "b", "b", "b"}),
         of(new DecisionTreeClassifier(1, ENTROPY), new String[]{"y", "x", "x2", "x3"},
@@ -56,8 +57,7 @@ public class DecisionTreeLearningTest {
   public void must_perform_decision_tree_classifier(DecisionTreeClassifier decisionTreeClassifier,
       String[] predictorNames,
       String[] expected
-  )
-      throws IOException {
+  ) throws IOException {
     var dataframe = Dataframes.csv(getResourceFileName("org/rsultan/utils/example-classif.csv"));
     var predictions = decisionTreeClassifier
         .setResponseVariableName("strColumn")
@@ -68,6 +68,24 @@ public class DecisionTreeLearningTest {
 
     assertThat(predictions).containsExactly(expected);
 
+  }
+
+  @ParameterizedTest
+  @MethodSource("params_that_must_perform_decision_tree_classifier")
+  public void must_serde_and_perform_decision_tree_classifier(
+      DecisionTreeClassifier decisionTreeClassifier,
+      String[] predictorNames,
+      String[] expected
+  ) throws IOException {
+    var dataframe = Dataframes.csv(getResourceFileName("org/rsultan/utils/example-classif.csv"));
+    var predictions = serdeTrainable(decisionTreeClassifier
+        .setResponseVariableName("strColumn")
+        .setPredictorNames(predictorNames)
+        .train(dataframe))
+        .predict(dataframe)
+        .get("predictions");
+
+    assertThat(predictions).containsExactly(expected);
   }
 
   @ParameterizedTest
@@ -84,6 +102,22 @@ public class DecisionTreeLearningTest {
         .predict(dataframe)
         .get("predictions");
 
-    assertThat(predictions).containsExactly(2.5D, 2.5D, 2.5D, 2.5D, 5.0D);
+    assertThat(predictions).containsExactly(3.0, 3.0, 3.0, 3.0, 3.0);
+  }
+
+  @ParameterizedTest
+  @MethodSource("params_that_must_perform_decision_tree_regressor")
+  public void must_serde_perform_decision_tree_regressor(
+      DecisionTreeRegressor decisionTreeRegressor
+  ) throws IOException {
+    var dataframe = Dataframes.csv(getResourceFileName("org/rsultan/utils/example-classif.csv"));
+    var predictions = serdeTrainable(decisionTreeRegressor
+        .setResponseVariableName("y")
+        .setPredictorNames("x", "x2", "x3")
+        .train(dataframe))
+        .predict(dataframe)
+        .get("predictions");
+
+    assertThat(predictions).containsExactly(3.0, 3.0, 3.0, 3.0, 3.0);
   }
 }

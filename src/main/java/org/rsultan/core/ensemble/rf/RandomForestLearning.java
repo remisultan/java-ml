@@ -1,4 +1,4 @@
-package org.rsultan.core.tree;
+package org.rsultan.core.ensemble.rf;
 
 import static java.lang.Math.min;
 import static java.util.Arrays.stream;
@@ -14,6 +14,7 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.rsultan.core.ModelParameters;
 import org.rsultan.core.Trainable;
+import org.rsultan.core.tree.DecisionTreeLearning;
 import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframe;
 import org.slf4j.Logger;
@@ -24,14 +25,14 @@ public abstract class RandomForestLearning extends ModelParameters<RandomForestL
 
   private static final Logger LOG = LoggerFactory.getLogger(RandomForestLearning.class);
   private final int numberOfEstimators;
-  private final ExecutorService executor;
+  private transient final ExecutorService executor;
 
   protected double sampleSizeRatio = 0.25;
   protected int treeDepth = 1;
   protected int sampleFeatures = 0;
 
   protected List<?> responses;
-  protected List<?> featureNames;
+  protected List<?> features;
 
   private List<? extends DecisionTreeLearning> trees;
 
@@ -57,8 +58,7 @@ public abstract class RandomForestLearning extends ModelParameters<RandomForestL
         predictorNames.length == 0 ? dfNoResponse : dfNoResponse.select(predictorNames);
 
     var columns = List.of(dfFeatures.getColumns());
-    featureNames = columns.stream().map(Column::columnName).collect(toList());
-    var featureIndices = featureNames.stream().map(featureNames::indexOf).collect(toList());
+    features = columns.stream().map(Column::columnName).collect(toList());
     responses = getResponseValues(dataframe);
 
     var X = dfFeatures.toMatrix();
@@ -74,19 +74,20 @@ public abstract class RandomForestLearning extends ModelParameters<RandomForestL
           var subRowIndices = getSampleIndices(X.rows(), min(rowSampleSize, X.rows()));
           var subFeatureIndices = getSampleIndices(X.columns(),
               min(featureSampleSize, X.columns()));
+          var localFeatures = stream(subFeatureIndices).mapToObj(features::get)
+              .map(features::indexOf).collect(toList());
           var Xsampled = X.getRows(subRowIndices).getColumns(subFeatureIndices);
           var Ysampled = Y.getRows(subRowIndices);
-          var localFeatures = stream(subFeatureIndices).mapToObj(featureIndices::get)
-              .collect(toList());
           return executor.submit(
-              () -> decisionTreeLearning.train(Xsampled, Ysampled, localFeatures, responses)
+              () -> decisionTreeLearning.setFeatures(localFeatures)
+                  .train(Xsampled, Ysampled)
           );
         }).map(this::getFuture).collect(toList());
     executor.shutdown();
     return this;
   }
 
-  private DecisionTreeLearning getFuture(Future<? extends DecisionTreeLearning> future) {
+  private DecisionTreeLearning getFuture(Future<DecisionTreeLearning> future) {
     try {
       return future.get();
     } catch (Exception e) {
@@ -103,7 +104,7 @@ public abstract class RandomForestLearning extends ModelParameters<RandomForestL
   @Override
   public Dataframe predict(Dataframe dataframe) {
     var allPredictions = this.trees.parallelStream()
-        .map(tree -> tree.<Double>rawPredict(dataframe))
+        .map(tree -> tree.<Double>predict(dataframe.getRowSize(), dataframe))
         .map(Nd4j::create)
         .collect(toList());
     long rows = allPredictions.size();

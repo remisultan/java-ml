@@ -1,4 +1,4 @@
-package org.rsultan.core.tree;
+package org.rsultan.core.ensemble.rf;
 
 import static java.lang.Math.max;
 import static java.util.Arrays.stream;
@@ -7,6 +7,8 @@ import static org.nd4j.common.util.MathUtils.round;
 
 import java.util.List;
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.rsultan.core.tree.DecisionTreeLearning;
+import org.rsultan.core.tree.DecisionTreeRegressor;
 import org.rsultan.core.tree.domain.Node;
 import org.rsultan.dataframe.Dataframe;
 
@@ -14,6 +16,30 @@ public class RandomForestRegressor extends RandomForestLearning {
 
   public RandomForestRegressor(int numberOfEstimator) {
     super(numberOfEstimator);
+  }
+
+  @Override
+  public RandomForestRegressor train(Dataframe dataframe) {
+    super.train(dataframe);
+    return this;
+  }
+
+  @Override
+  public RandomForestRegressor setResponseVariableName(String responseVariableName) {
+    super.setResponseVariableName(responseVariableName);
+    return this;
+  }
+
+  @Override
+  public RandomForestRegressor setPredictionColumnName(String name) {
+    super.setPredictionColumnName(name);
+    return this;
+  }
+
+  @Override
+  public RandomForestRegressor setPredictorNames(String... names) {
+    super.setPredictorNames(names);
+    return this;
   }
 
   @Override
@@ -28,7 +54,7 @@ public class RandomForestRegressor extends RandomForestLearning {
 
   @Override
   protected DecisionTreeLearning buildDecisionTreeLearning() {
-    return new RandomForestRegressorTree(treeDepth, featureNames)
+    return new RandomForestRegressorTree(treeDepth, features, responses)
         .setResponseVariableName(responseVariableName)
         .setPredictionColumnName(predictionColumnName);
   }
@@ -44,15 +70,37 @@ public class RandomForestRegressor extends RandomForestLearning {
     return stream(bestResponses).boxed().collect(toList());
   }
 
+  @Override
+  public RandomForestRegressor setSampleSizeRatio(double sampleSizeRatio) {
+    super.setSampleSizeRatio(sampleSizeRatio);
+    return this;
+  }
+
+  @Override
+  public RandomForestRegressor setTreeDepth(int treeDepth) {
+    super.setTreeDepth(treeDepth);
+    return this;
+  }
+
+  @Override
+  public RandomForestRegressor setSampleFeatureSize(int sampleFeatures) {
+    super.setSampleFeatureSize(sampleFeatures);
+    return this;
+  }
+
   private static class RandomForestRegressorTree extends DecisionTreeRegressor {
 
     private final List<?> parentFeatureNames;
 
     public RandomForestRegressorTree(
         int depth,
-        List<?> parentFeatureNames) {
+        List<?> parentFeatureNames,
+        List<?> responses
+
+    ) {
       super(depth);
       this.parentFeatureNames = parentFeatureNames;
+      this.responses = responses;
     }
 
     @Override
@@ -65,4 +113,5 @@ public class RandomForestRegressor extends RandomForestLearning {
       return node.predictedResponse();
     }
   }
+
 }

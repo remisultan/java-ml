@@ -13,6 +13,8 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.factory.Nd4j;
+import org.rsultan.core.ensemble.rf.RandomForestClassifier;
+import org.rsultan.core.ensemble.rf.RandomForestRegressor;
 import org.rsultan.dataframe.Dataframes;
 
 public class RandomForestLearningTest {
@@ -53,6 +55,8 @@ public class RandomForestLearningTest {
     var dataframe = Dataframes.csv(getResourceFileName("org/rsultan/utils/example-classif.csv"));
     var predictions = decisionTreeClassifier
         .setResponseVariableName("strColumn")
+        .setPredictionColumnName("predictions")
+        .setPredictorNames("x", "x2", "x3")
         .setTreeDepth(treeDepth)
         .setSampleFeatureSize(sampleFeatures)
         .setSampleSizeRatio(sampleSizeRatio)
@@ -61,7 +65,6 @@ public class RandomForestLearningTest {
         .get("predictions");
 
     assertThat(predictions).hasSize(5);
-
   }
 
   @ParameterizedTest
@@ -71,11 +74,11 @@ public class RandomForestLearningTest {
       int treeDepth,
       int sampleFeatures,
       double sampleSizeRatio
-  )
-      throws IOException {
+  ) throws IOException {
     var dataframe = Dataframes.csv(getResourceFileName("org/rsultan/utils/example-classif.csv"));
     var predictions = decisionTreeRegressor
         .setResponseVariableName("y")
+        .setPredictionColumnName("predictions")
         .setPredictorNames("x", "x2", "x3")
         .setTreeDepth(treeDepth)
         .setSampleFeatureSize(sampleFeatures)
