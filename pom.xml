@@ -12,8 +12,8 @@
 
   <distributionManagement>
     <repository>
-      <id>release.artifactory.rsultan.org</id>
-      <url>gs://artifactory.rsultan.org/release</url>
+      <id>release.archiva.rsultan.org</id>
+      <url>https://archiva.rsultan.org/repository/internal</url>
     </repository>
   </distributionManagement>
 
@@ -67,13 +67,6 @@
 
   <build>
     <finalName>java-ml</finalName>
-    <extensions>
-      <extension>
-        <groupId>com.gkatzioura.maven.cloud</groupId>
-        <artifactId>google-storage-wagon</artifactId>
-        <version>${google-storage-wagon.version}</version>
-      </extension>
-    </extensions>
     <pluginManagement>
       <plugins>
         <plugin>

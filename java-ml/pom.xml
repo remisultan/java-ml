@@ -32,11 +32,6 @@
       <version>${nd4j.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.nd4j</groupId>
-      <artifactId>nd4j-cuda-10.2-platform</artifactId>
-      <version>${nd4j.version}</version>
-    </dependency>
-    <dependency>
       <groupId>com.univocity</groupId>
       <artifactId>univocity-parsers</artifactId>
       <version>${univocity-parsers.version}</version>
