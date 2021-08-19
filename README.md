@@ -9,16 +9,18 @@ You can check for examples in this package: ``src/main/java/org/rsultan/example`
 
 ## Getting started
 
-Clone the repo and execute this
-
-```bash
- $ git fetch --all --tags
- $ git checkout tags/<latest-release> -b <your-branch>  
- $ ./mvnw clean install
+Add this repository to your `pom.xml`
+```xml
+ <repositories>
+    <repository>
+        <id>release.archiva.rsultan.org</id>
+        <name>Java ML repository</name>
+        <url>https://archiva.rsultan.org/repository/internal</url>
+    </repository>
+ </repositories>
 ```
 
-Then you can import this to your `pom.xml`
-
+And then add the corresponding dependency 
 ```xml
     <dependency>
       <groupId>org.rsultan</groupId>
@@ -27,9 +29,16 @@ Then you can import this to your `pom.xml`
     </dependency>
 ```
 
-There is an existing artifactory but I am not satisfied with how to make it public today.
-There will be an artifactory in the future.
+You can also clone the repo and add the dependency according to your version
+
+```bash
+ $ git fetch --all --tags
+ $ git checkout tags/<latest-release> -b <your-branch>  
+ $ ./mvnw clean install
+```
 
 Once your are good with this, you can go read the [wiki](https://github.com/remisultan/java-ml/wiki)
+
+You can also check the examples in the `java-ml-example` module.
 
 Good luck !

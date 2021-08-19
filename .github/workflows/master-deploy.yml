@@ -8,7 +8,8 @@ on:
       - closed
 
 env:
-  APPLICATION_CREDENTIALS: ${{ secrets.GCP_CLOUD_STORAGE_CREDENTIALS }}
+  ARCHIVA_USERNAME: ${{ secrets.SECRET_ARCHIVA_USERNAME }}
+  ARCHIVA_PASSWORD: ${{ secrets.SECRET_ARCHIVA_PASSWORD }}
 
 jobs:
   master-compile-test-deploy-and-release:
@@ -21,12 +22,12 @@ jobs:
           java-version: '15'
       - name: Master Compile
         run: |
-          # Set application credentials
-          echo $APPLICATION_CREDENTIALS | base64 -d > ./credentials.json
-          export GOOGLE_APPLICATION_CREDENTIALS=./credentials.json
+          #Add maven settings.xml
+          MAVEN_HOME=`./mvnw -version | grep "Maven home" | cut -d':' -f2 | gsed -r "s# ##g"`
+          cp ./settings.xml ${MAVEN_HOME}/conf/settings.xml
 
           # Add user for repository
-          git config --local user.email "cloud-storage@rsultan.iam.gserviceaccount.com"
+          git config --local user.email "remi.sultan@gmail.com"
           git config --local user.name "JavaML autodeploy"
           git config push.followTags true
 
@@ -38,13 +39,14 @@ jobs:
           git tag -a -m "$app_version" "$app_version"
 
           # Deploy to GCP with maven
-          ./mvnw clean deploy
+          ./mvnw clean deploy \
+            -Drelease.archiva.rsultan.username=${ARCHIVA_USERNAME} \
+            -Drelease.archiva.rsultan.password=${ARCHIVA_PASSWORD}
 
           # Setting the next developement iteration
           ./set-version.sh snapshot
           git add pom.xml version.properties
           git commit -m "chore: jumping onto next development iteration"
-          rm ./credentials.json
       - name: Push changes made
         uses: ad-m/github-push-action@master
         with:
