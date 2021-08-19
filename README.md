@@ -39,4 +39,6 @@ You can also clone the repo and add the dependency according to your version
 
 Once your are good with this, you can go read the [wiki](https://github.com/remisultan/java-ml/wiki)
 
+You can also check the examples in the `java-ml-example` module.
+
 Good luck !
