@@ -20,7 +20,7 @@
   <properties>
     <assertj-core.version>3.9.1</assertj-core.version>
     <google-storage-wagon.version>1.0</google-storage-wagon.version>
-    <java.version>15</java.version>
+    <java.version>16</java.version>
     <junit-jupiter.version>5.7.0</junit-jupiter.version>
     <maven.compiler.source>${java.version}</maven.compiler.source>
     <maven.compiler.target>${java.version}</maven.compiler.target>
@@ -89,7 +89,6 @@
               <BACKEND_PRIORITY_CPU>1</BACKEND_PRIORITY_CPU>
               <BACKEND_PRIORITY_GPU>0</BACKEND_PRIORITY_GPU>
             </environmentVariables>
-            <argLine>--enable-preview</argLine>
           </configuration>
         </plugin>
         <plugin>
@@ -121,7 +120,6 @@
         <configuration>
           <source>${java.version}</source>
           <target>${java.version}</target>
-          <compilerArgs>--enable-preview</compilerArgs>
         </configuration>
       </plugin>
     </plugins>
