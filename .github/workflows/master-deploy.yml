@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-java@v1
         with:
-          java-version: '15'
+          java-version: '16'
       - name: Master Compile
         run: |
           #Add maven settings.xml
@@ -34,7 +34,7 @@ jobs:
           # Setting the Release version to pom
           app_version=$(grep -rE "version.next=[0-9]+\.[0-9]+\.[0-9]+" version.properties | cut -d"=" -f2)
           ./set-version.sh release
-          git add pom.xml pom.xml version.properties
+          git add pom.xml */pom.xml version.properties
           git commit -m "release: v-$app_version"
           git tag -a -m "$app_version" "$app_version"
 
@@ -45,7 +45,7 @@ jobs:
 
           # Setting the next developement iteration
           ./set-version.sh snapshot
-          git add pom.xml version.properties
+          git add pom.xml */pom.xml version.properties
           git commit -m "chore: jumping onto next development iteration"
       - name: Push changes made
         uses: ad-m/github-push-action@master

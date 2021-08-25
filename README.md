@@ -5,7 +5,7 @@ You can check for examples in this package: ``src/main/java/org/rsultan/example`
 
 ## Requirements
 
-- JDK15+
+- JDK16+
 
 ## Getting started
 
