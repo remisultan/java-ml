@@ -20,6 +20,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.rsultan.dataframe.printer.DataframePrinter;
+import org.rsultan.dataframe.printer.DataframeWriter;
 import org.rsultan.dataframe.transform.filter.FilterDataframe;
 import org.rsultan.dataframe.transform.filter.FilterTransform;
 import org.rsultan.dataframe.transform.map.MapDataframe;
@@ -135,6 +136,10 @@ public class Dataframe implements MapTransform, FilterTransform, MatrixTransform
 
   public void show(int start, int end) {
     DataframePrinter.create(data).print(max(0, start), min(end, this.rowSize));
+  }
+
+  public void write(String filename, String separator, String enclosure) {
+    DataframeWriter.write(this, filename, separator, enclosure);
   }
 
   public void tail() {

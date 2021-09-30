@@ -5,9 +5,6 @@ import static org.apache.commons.lang3.RandomUtils.nextDouble;
 import static org.apache.commons.lang3.RandomUtils.nextInt;
 import static org.rsultan.core.clustering.ensemble.isolationforest.utils.ScoreUtils.averagePathLength;
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.LongStream;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
@@ -21,7 +18,6 @@ public class IsolationTree implements RawTrainable<IsolationTree> {
   public static final Logger LOG = LoggerFactory.getLogger(IsolationTree.class);
   private final int treeDepthLimit;
   private IsolationNode tree;
-  private ExecutorService executorService;
 
   public IsolationTree(int treeDepthLimit) {
     this.treeDepthLimit = treeDepthLimit;
@@ -29,18 +25,11 @@ public class IsolationTree implements RawTrainable<IsolationTree> {
 
   @Override
   public IsolationTree train(INDArray matrix) {
-    executorService = Executors.newFixedThreadPool(Integer.MAX_VALUE);
-    try {
-      this.tree = buildTree(matrix, treeDepthLimit);
-    } catch (ExecutionException | InterruptedException e) {
-      LOG.error("", e);
-    }
-    executorService.shutdown();
+    this.tree = buildTree(matrix, treeDepthLimit);
     return this;
   }
 
-  private IsolationNode buildTree(INDArray matrix, int currentDepth)
-      throws ExecutionException, InterruptedException {
+  private IsolationNode buildTree(INDArray matrix, int currentDepth) {
     LOG.info("Tree Depth {}", currentDepth);
     if (currentDepth <= 0 || matrix.rows() <= 2) {
       return new IsolationNode(matrix);

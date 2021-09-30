@@ -43,7 +43,7 @@ public class IsolationForest implements Trainable<IsolationForest> {
         .mapToObj(i -> range(0, realSample)
             .map(idx -> RandomUtils.nextInt(0, matrix.rows()))
             .toArray()).map(matrix::getRows)
-        .map(new IsolationTree(treeDepth)::train)
+        .map(m -> new IsolationTree(treeDepth).train(m))
         .toList();
     return this;
   }
@@ -59,9 +59,10 @@ public class IsolationForest implements Trainable<IsolationForest> {
   }
 
   private INDArray computeAnomalyScore(INDArray matrix) {
-    var pathLengths = isolationTrees.stream().parallel()
-        .peek(tree -> LOG.info("Compute paths for tree {}", isolationTrees.indexOf(tree)))
-        .map(tree -> tree.predict(matrix)).toList();
+    var pathLengths = isolationTrees.stream().map(tree -> {
+      LOG.info("Compute paths for tree {}", isolationTrees.indexOf(tree) + 1);
+      return tree.predict(matrix);
+    }).toList();
     int[] shape = {pathLengths.size(), pathLengths.get(0).columns()};
     var avgLength = Nd4j.create(pathLengths, shape).mean(true, 0);
     var twos = Nd4j.ones(avgLength.shape()).mul(2D);
