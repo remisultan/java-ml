@@ -20,11 +20,11 @@ public class IsolationForestExample {
 
     IsolationForest model = new IsolationForest(200, 0.8).train(df.mapWithout("attack"));
     var anomalies = df.filter("attack", (Long i) -> i == 1L).mapWithout("attack");
-    model.predict(anomalies).write("C:\\temp\\anomalies.csv", ",", "\"");
-
     var nonAnomalies = Dataframes.trainTest(df.getColumns())
         .setSplitValue(0.99).split()
         .test().filter("attack", (Long i) -> i == 0L).mapWithout("attack");
-    model.predict(nonAnomalies).write("C:\\temp\\non_anomalies.csv", ",", "\"");
+
+    model.predict(anomalies).tail();
+    model.predict(nonAnomalies).tail();
   }
 }
