@@ -19,17 +19,21 @@ public class IsolationForest implements Trainable<IsolationForest> {
 
   private static final Logger LOG = LoggerFactory.getLogger(IsolationTree.class);
   private final int nbTrees;
-  private final double anomalyThreshold;
+  private double anomalyThreshold = 0.5;
   private List<IsolationTree> isolationTrees;
   private int sampleSize = 256;
 
-  public IsolationForest(int nbTrees, double anomalyThreshold) {
+  public IsolationForest(int nbTrees) {
     this.nbTrees = nbTrees;
-    this.anomalyThreshold = anomalyThreshold;
   }
 
   public IsolationForest setSampleSize(int sampleSize) {
     this.sampleSize = sampleSize;
+    return this;
+  }
+
+  public IsolationForest setAnomalyThreshold(double anomalyThreshold) {
+    this.anomalyThreshold = anomalyThreshold;
     return this;
   }
 
@@ -38,7 +42,7 @@ public class IsolationForest implements Trainable<IsolationForest> {
     var matrix = dataframe.toMatrix();
     int realSample = sampleSize >= matrix.rows() ? sampleSize / 10 : sampleSize;
     int treeDepth = (int) Math.ceil(Math.log(realSample) / Math.log(2));
-    isolationTrees = range(0, nbTrees)
+    isolationTrees = range(0, nbTrees).parallel()
         .peek(i -> LOG.info("Tree number: {}", i))
         .mapToObj(i -> range(0, realSample)
             .map(idx -> RandomUtils.nextInt(0, matrix.rows()))
@@ -54,12 +58,12 @@ public class IsolationForest implements Trainable<IsolationForest> {
     var anomalyScores = computeAnomalyScore(matrix);
     var isAnomaly = new Column<>("anomalies", DoubleStream.of(
         anomalyScores.toDoubleVector()
-    ).mapToObj(score -> score >= anomalyThreshold).toArray());
+    ).mapToObj(score -> score >= anomalyThreshold ? 1L : 0L).toArray());
     return dataframe.addColumn(isAnomaly);
   }
 
   private INDArray computeAnomalyScore(INDArray matrix) {
-    var pathLengths = isolationTrees.stream().map(tree -> {
+    var pathLengths = isolationTrees.stream().parallel().map(tree -> {
       LOG.info("Compute paths for tree {}", isolationTrees.indexOf(tree) + 1);
       return tree.predict(matrix);
     }).toList();

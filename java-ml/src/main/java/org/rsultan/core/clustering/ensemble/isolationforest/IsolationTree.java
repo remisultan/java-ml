@@ -5,7 +5,6 @@ import static org.apache.commons.lang3.RandomUtils.nextDouble;
 import static org.apache.commons.lang3.RandomUtils.nextInt;
 import static org.rsultan.core.clustering.ensemble.isolationforest.utils.ScoreUtils.averagePathLength;
 
-import java.util.stream.LongStream;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.rsultan.core.RawTrainable;
@@ -72,21 +71,18 @@ public class IsolationTree implements RawTrainable<IsolationTree> {
 
   @Override
   public INDArray predict(INDArray matrix) {
-    return Nd4j.create(LongStream.range(0, matrix.rows()).boxed()
-        .map(matrix::getRow)
-        .map(row -> {
-          var node = tree;
-          int length = 0;
-          while (!node.isLeaf()) {
-            if (row.getDouble(node.feature()) < node.featureThreshold()) {
-              node = node.left();
-            } else {
-              node = node.right();
-            }
-            length++;
-          }
-          int leafSize = node.data().rows();
-          return length + averagePathLength(leafSize);
-        }).toList());
+    var pathLengths = Nd4j.zeros(1, matrix.rows());
+    for (int i = 0; i < matrix.rows(); i++) {
+      var row = matrix.getRow(i);
+      var node = tree;
+      int length = 0;
+      while (!node.isLeaf()) {
+        node = row.getDouble(node.feature()) < node.featureThreshold() ? node.left() : node.right();
+        length++;
+      }
+      int leafSize = node.data().rows();
+      pathLengths.put(0, i, length + averagePathLength(leafSize));
+    }
+    return pathLengths;
   }
 }
