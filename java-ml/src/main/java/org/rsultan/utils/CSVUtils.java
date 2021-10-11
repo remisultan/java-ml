@@ -18,6 +18,8 @@ import java.util.regex.Pattern;
 import org.junit.jupiter.params.shadow.com.univocity.parsers.csv.CsvFormat;
 import org.junit.jupiter.params.shadow.com.univocity.parsers.csv.CsvParser;
 import org.junit.jupiter.params.shadow.com.univocity.parsers.csv.CsvParserSettings;
+import org.junit.jupiter.params.shadow.com.univocity.parsers.csv.CsvWriter;
+import org.junit.jupiter.params.shadow.com.univocity.parsers.csv.CsvWriterSettings;
 import org.rsultan.dataframe.Column;
 
 public class CSVUtils {
