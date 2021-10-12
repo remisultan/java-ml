@@ -36,8 +36,9 @@ public class DataframeTest {
             new Column<>("Doubles", 0D, 1D, 2D, 3D, 4D),
             new Column<>("Floats", 0F, 1F, 2F, 3F, 4F),
             new Column<>("Strings", "1.1", "2.1", "3", "4.4", "5.3"),
-            new Column<>("Negatives", "-1.1", "-2.1", "-3", "-4.4", "-5.3")
-        }, 5, 6)
+            new Column<>("Negatives", "-1.1", "-2.1", "-3", "-4.4", "-5.3"),
+            new Column<>("Special numbers", "-1.1E-5", "-2.1e-10", "-3E3", "4.4e-5", "5.3E10")
+        }, 5, 7)
     );
   }
 
