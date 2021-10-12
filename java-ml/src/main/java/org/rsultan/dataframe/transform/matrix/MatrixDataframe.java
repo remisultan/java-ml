@@ -17,7 +17,7 @@ import org.rsultan.dataframe.Dataframes;
 
 public record MatrixDataframe(Dataframe dataframe) implements MatrixTransform {
 
-  private static final String NUMBER_REGEX = "^(-?\\d+(\\.\\d+)?([Ee]-?\\d+)?)$";
+  private static final String NUMBER_REGEX = "^([-+]?(\\d+(\\.\\d+)?|\\.\\d+)([Ee][-+]?\\d+)?)$";
 
   public INDArray toVector(String columnName) {
     double[] doubles = this.dataframe.getData().get(columnName).stream()
