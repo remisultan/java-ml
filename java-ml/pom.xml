@@ -8,11 +8,11 @@
   <parent>
     <groupId>org.rsultan</groupId>
     <artifactId>java-ml-parent</artifactId>
-    <version>2.1.2-SNAPSHOT</version>
+    <version>2.1.2</version>
   </parent>
 
   <name>java-ml</name>
-  <version>2.1.2-SNAPSHOT</version>
+  <version>2.1.2</version>
   <artifactId>java-ml</artifactId>
 
   <properties>
