@@ -18,10 +18,10 @@ import org.slf4j.LoggerFactory;
 public class IsolationForest implements Trainable<IsolationForest> {
 
   private static final Logger LOG = LoggerFactory.getLogger(IsolationTree.class);
-  private final int nbTrees;
-  private double anomalyThreshold = 0.5;
-  private List<IsolationTree> isolationTrees;
-  private int sampleSize = 256;
+  protected final int nbTrees;
+  protected double anomalyThreshold = 0.5;
+  protected List<IsolationTree> isolationTrees;
+  protected int sampleSize = 256;
 
   public IsolationForest(int nbTrees) {
     this.nbTrees = nbTrees;
