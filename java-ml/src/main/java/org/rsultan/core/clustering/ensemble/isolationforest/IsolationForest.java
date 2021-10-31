@@ -5,9 +5,12 @@ import static org.rsultan.core.clustering.ensemble.isolationforest.utils.ScoreUt
 
 import java.util.List;
 import java.util.stream.DoubleStream;
+import java.util.stream.LongStream;
 import org.apache.commons.lang3.RandomUtils;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.indexing.INDArrayIndex;
+import org.nd4j.linalg.indexing.NDArrayIndex;
 import org.nd4j.linalg.ops.transforms.Transforms;
 import org.rsultan.core.Trainable;
 import org.rsultan.dataframe.Column;
@@ -18,10 +21,10 @@ import org.slf4j.LoggerFactory;
 public class IsolationForest implements Trainable<IsolationForest> {
 
   private static final Logger LOG = LoggerFactory.getLogger(IsolationTree.class);
-  private final int nbTrees;
-  private double anomalyThreshold = 0.5;
-  private List<IsolationTree> isolationTrees;
-  private int sampleSize = 256;
+  protected final int nbTrees;
+  protected double anomalyThreshold = 0.5;
+  protected List<IsolationTree> isolationTrees;
+  protected int sampleSize = 256;
 
   public IsolationForest(int nbTrees) {
     this.nbTrees = nbTrees;
@@ -44,9 +47,11 @@ public class IsolationForest implements Trainable<IsolationForest> {
     int treeDepth = (int) Math.ceil(Math.log(realSample) / Math.log(2));
     isolationTrees = range(0, nbTrees).parallel()
         .peek(i -> LOG.info("Tree number: {}", i))
-        .mapToObj(i -> range(0, realSample)
-            .map(idx -> RandomUtils.nextInt(0, matrix.rows()))
-            .toArray()).map(matrix::getRows)
+        .mapToObj(i -> LongStream.range(0, realSample)
+            .map(idx -> RandomUtils.nextLong(0, matrix.rows()))
+            .toArray())
+        .map(NDArrayIndex::indices)
+        .map(matrix::get)
         .map(m -> new IsolationTree(treeDepth).train(m))
         .toList();
     return this;

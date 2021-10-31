@@ -1,12 +1,13 @@
 package org.rsultan.core.clustering.ensemble.isolationforest;
 
-import static java.util.stream.IntStream.range;
+import static java.util.stream.LongStream.range;
 import static org.apache.commons.lang3.RandomUtils.nextDouble;
 import static org.apache.commons.lang3.RandomUtils.nextInt;
 import static org.rsultan.core.clustering.ensemble.isolationforest.utils.ScoreUtils.averagePathLength;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.indexing.NDArrayIndex;
 import org.rsultan.core.RawTrainable;
 import org.rsultan.core.clustering.ensemble.domain.IsolationNode;
 import org.slf4j.Logger;
@@ -45,12 +46,12 @@ public class IsolationTree implements RawTrainable<IsolationTree> {
     var leftIndices = range(0, feature.columns()).parallel()
         .filter(idx -> feature.getDouble(idx) < valueSplit)
         .toArray();
-    var left = matrix.getRows(leftIndices);
+    var left = getVector(matrix, leftIndices);
 
     var rightIndices = range(0, feature.columns()).parallel()
         .filter(idx -> feature.getDouble(idx) > valueSplit)
         .toArray();
-    var right = matrix.getRows(rightIndices);
+    var right = getVector(matrix, rightIndices);
 
     return new IsolationNode(
         splitFeature,
@@ -58,6 +59,10 @@ public class IsolationTree implements RawTrainable<IsolationTree> {
         buildTree(left, currentDepth - 1),
         buildTree(right, currentDepth - 1)
     );
+  }
+
+  private INDArray getVector(INDArray matrix, long[] indices) {
+    return matrix.get(NDArrayIndex.indices(indices));
   }
 
   private double getValueSplit(double startInclusive, double endInclusive) {
