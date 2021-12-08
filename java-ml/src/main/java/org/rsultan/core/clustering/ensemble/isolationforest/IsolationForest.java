@@ -9,10 +9,11 @@ import java.util.stream.LongStream;
 import org.apache.commons.lang3.RandomUtils;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.indexing.INDArrayIndex;
 import org.nd4j.linalg.indexing.NDArrayIndex;
 import org.nd4j.linalg.ops.transforms.Transforms;
+import org.rsultan.core.RawTrainable;
 import org.rsultan.core.Trainable;
+import org.rsultan.core.clustering.ensemble.isolationforest.tree.IsolationTree;
 import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframe;
 import org.slf4j.Logger;
@@ -23,8 +24,9 @@ public class IsolationForest implements Trainable<IsolationForest> {
   private static final Logger LOG = LoggerFactory.getLogger(IsolationTree.class);
   protected final int nbTrees;
   protected double anomalyThreshold = 0.5;
-  protected List<IsolationTree> isolationTrees;
+  protected List<? extends RawTrainable<?>> isolationTrees;
   protected int sampleSize = 256;
+  private boolean useAnomalyScoresOnly;
 
   public IsolationForest(int nbTrees) {
     this.nbTrees = nbTrees;
@@ -37,6 +39,11 @@ public class IsolationForest implements Trainable<IsolationForest> {
 
   public IsolationForest setAnomalyThreshold(double anomalyThreshold) {
     this.anomalyThreshold = anomalyThreshold;
+    return this;
+  }
+
+  public IsolationForest setUseAnomalyScoresOnly(boolean useAnomalyScoresOnly) {
+    this.useAnomalyScoresOnly = useAnomalyScoresOnly;
     return this;
   }
 
@@ -61,9 +68,11 @@ public class IsolationForest implements Trainable<IsolationForest> {
   public Dataframe predict(Dataframe dataframe) {
     var matrix = dataframe.toMatrix();
     var anomalyScores = computeAnomalyScore(matrix);
-    var isAnomaly = new Column<>("anomalies", DoubleStream.of(
-        anomalyScores.toDoubleVector()
-    ).mapToObj(score -> score >= anomalyThreshold ? 1L : 0L).toArray());
+    final DoubleStream doubleStream = DoubleStream.of(
+            anomalyScores.toDoubleVector()
+    );
+    var isAnomaly =  new Column<>("anomalies",
+            useAnomalyScoresOnly ? doubleStream.boxed().toArray() : doubleStream.mapToObj(score -> score >= anomalyThreshold ? 1L : 0L).toArray());
     return dataframe.addColumn(isAnomaly);
   }
 
