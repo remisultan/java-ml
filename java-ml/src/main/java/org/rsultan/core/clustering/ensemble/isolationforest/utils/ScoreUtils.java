@@ -17,4 +17,5 @@ public class ScoreUtils {
   private static double harmonicNumber(double leafSize) {
     return Math.log(leafSize - 1) + EULER_CONSTANT;
   }
+
 }
