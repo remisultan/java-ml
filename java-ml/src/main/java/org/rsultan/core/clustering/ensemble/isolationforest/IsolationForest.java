@@ -3,6 +3,7 @@ package org.rsultan.core.clustering.ensemble.isolationforest;
 import static java.util.stream.IntStream.range;
 import static org.rsultan.core.clustering.ensemble.isolationforest.utils.ScoreUtils.averagePathLength;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.DoubleStream;
 import java.util.stream.LongStream;
@@ -59,9 +60,13 @@ public class IsolationForest implements Trainable<IsolationForest> {
             .toArray())
         .map(NDArrayIndex::indices)
         .map(matrix::get)
-        .map(m -> new IsolationTree(treeDepth).train(m))
+        .map(m -> getTree(treeDepth, m))
         .toList();
     return this;
+  }
+
+  protected RawTrainable<?> getTree(int treeDepth, INDArray m) {
+    return new IsolationTree(treeDepth).train(m);
   }
 
   @Override
@@ -76,11 +81,12 @@ public class IsolationForest implements Trainable<IsolationForest> {
     return dataframe.addColumn(isAnomaly);
   }
 
-  private INDArray computeAnomalyScore(INDArray matrix) {
-    var pathLengths = isolationTrees.stream().parallel().map(tree -> {
+  protected INDArray computeAnomalyScore(INDArray matrix) {
+    var pathLengths = new ArrayList<INDArray>();
+    for (RawTrainable<?> tree: isolationTrees) {
       LOG.info("Compute paths for tree {}", isolationTrees.indexOf(tree) + 1);
-      return tree.predict(matrix);
-    }).toList();
+      pathLengths.add(tree.predict(matrix));
+    }
     int[] shape = {pathLengths.size(), pathLengths.get(0).columns()};
     var avgLength = Nd4j.create(pathLengths, shape).mean(true, 0);
     var twos = Nd4j.ones(avgLength.shape()).mul(2D);
