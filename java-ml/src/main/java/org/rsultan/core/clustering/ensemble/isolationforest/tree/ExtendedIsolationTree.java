@@ -4,12 +4,15 @@ import org.apache.commons.math3.distribution.NormalDistribution;
 import org.nd4j.common.util.MathUtils;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.indexing.NDArrayIndex;
 import org.rsultan.core.RawTrainable;
 import org.rsultan.core.clustering.ensemble.domain.IsolationNode;
 import org.rsultan.core.clustering.ensemble.isolationforest.tree.ExtendedIsolationTree.Slope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
+import java.util.function.LongPredicate;
 
 import static java.util.stream.LongStream.range;
 
@@ -50,6 +53,14 @@ public class ExtendedIsolationTree extends AbstractTree<Slope> implements RawTra
         buildTree(left, currentDepth - 1),
         buildTree(right, currentDepth - 1)
     );
+  }
+
+  private INDArray getVector(INDArray matrix, long[] indices) {
+    return matrix.get(NDArrayIndex.indices(indices));
+  }
+
+  private long[] getIndices(INDArray ndArray, LongPredicate predicate){
+    return range(0, ndArray.rows()).parallel().filter(predicate).toArray();
   }
 
   private INDArray getIntercept(int numberOfFeatures, INDArray mins, INDArray maxs) {
