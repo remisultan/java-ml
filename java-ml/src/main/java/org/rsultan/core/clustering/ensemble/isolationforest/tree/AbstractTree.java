@@ -31,14 +31,6 @@ public abstract class AbstractTree<NODE_DATA> {
 
     protected abstract boolean chooseLeftNode(INDArray row, NODE_DATA slope);
 
-    protected INDArray getVector(INDArray matrix, long[] indices) {
-        return matrix.get(NDArrayIndex.indices(indices));
-    }
-
-    protected long[] getIndices(INDArray ndArray, LongPredicate predicate){
-        return range(0, ndArray.rows()).parallel().filter(predicate).toArray();
-    }
-
     public INDArray predict(INDArray matrix) {
         var pathLengths = Nd4j.zeros(1, matrix.rows());
         for (int i = 0; i < matrix.rows(); i++) {

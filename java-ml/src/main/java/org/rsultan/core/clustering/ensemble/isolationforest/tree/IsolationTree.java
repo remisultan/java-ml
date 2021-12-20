@@ -1,5 +1,7 @@
 package org.rsultan.core.clustering.ensemble.isolationforest.tree;
 
+import static java.util.stream.IntStream.range;
+import static org.apache.commons.lang3.RandomUtils.nextDouble;
 import static org.apache.commons.lang3.RandomUtils.nextInt;
 
 import org.nd4j.common.util.MathUtils;
@@ -25,28 +27,36 @@ public class IsolationTree extends AbstractTree<Feature> implements RawTrainable
   }
 
   @Override
-  protected IsolationNode<Feature> buildNode(INDArray X, int currentDepth) {
+  protected IsolationNode<Feature> buildNode(INDArray matrix, int currentDepth) {
     LOG.info("Tree Depth {}", currentDepth);
-    int numberOfFeatures = X.columns();
+    int numberOfFeatures = matrix.columns();
     int splitFeature = nextInt(0, numberOfFeatures);
-    var feature = X.getColumn(splitFeature);
+    var feature = matrix.getColumn(splitFeature);
     double startInclusive = feature.minNumber().doubleValue();
     double endInclusive = feature.maxNumber().doubleValue();
+
     double valueSplit = MathUtils.randomDoubleBetween(startInclusive, endInclusive);
 
-    var left = getVector(X, getIndices(feature, idx -> feature.getDouble(idx) < valueSplit));
-    var right = getVector(X, getIndices(feature, idx -> feature.getDouble(idx) >= valueSplit));
+    var leftIndices = range(0, feature.columns()).parallel()
+            .filter(idx -> feature.getDouble(idx) < valueSplit)
+            .toArray();
+    var left = matrix.getRows(leftIndices);
+
+    var rightIndices = range(0, feature.columns()).parallel()
+            .filter(idx -> feature.getDouble(idx) >= valueSplit)
+            .toArray();
+    var right = matrix.getRows(rightIndices);
 
     return new IsolationNode<>(
-        new Feature(splitFeature, valueSplit),
-        buildTree(left, currentDepth - 1),
-        buildTree(right, currentDepth - 1)
+            new Feature(splitFeature, valueSplit),
+            buildTree(left, currentDepth - 1),
+            buildTree(right, currentDepth - 1)
     );
   }
 
   @Override
   protected boolean chooseLeftNode(INDArray row, Feature feature) {
-    return row.getDouble(feature.feature) < feature.threshold ;
+    return row.getDouble(feature.feature) < feature.threshold;
   }
 
   static record Feature(int feature, double threshold){}
