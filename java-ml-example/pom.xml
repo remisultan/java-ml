@@ -9,7 +9,7 @@
   <parent>
     <artifactId>java-ml-parent</artifactId>
     <groupId>org.rsultan</groupId>
-    <version>2.2.3-SNAPSHOT</version>
+    <version>3.0.0</version>
   </parent>
 
   <artifactId>java-ml-example</artifactId>
