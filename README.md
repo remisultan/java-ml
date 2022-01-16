@@ -9,18 +9,15 @@ You can check for examples in this package: ``src/main/java/org/rsultan/example`
 
 ## Getting started
 
-Add this repository to your `pom.xml`
-```xml
- <repositories>
-    <repository>
-        <id>release.archiva.rsultan.org</id>
-        <name>Java ML repository</name>
-        <url>https://archiva.rsultan.org/repository/internal</url>
-    </repository>
- </repositories>
+Clone the repo and add the dependency according to your version
+
+```bash
+ $ git fetch --all --tags
+ $ git checkout tags/<latest-release> -b <your-branch>  
+ $ ./mvnw clean install
 ```
 
-And then add the corresponding dependency 
+And then add the corresponding dependency
 ```xml
     <dependency>
       <groupId>org.rsultan</groupId>
@@ -29,13 +26,6 @@ And then add the corresponding dependency
     </dependency>
 ```
 
-You can also clone the repo and add the dependency according to your version
-
-```bash
- $ git fetch --all --tags
- $ git checkout tags/<latest-release> -b <your-branch>  
- $ ./mvnw clean install
-```
 
 Once your are good with this, you can go read the [wiki](https://github.com/remisultan/java-ml/wiki)
 
