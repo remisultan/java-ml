@@ -6,7 +6,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.rsultan</groupId>
   <artifactId>java-ml-parent</artifactId>
-  <version>2.2.2-SNAPSHOT</version>
+  <version>3.0.1-SNAPSHOT</version>
   <name>java-ml-parent</name>
   <packaging>pom</packaging>
 
@@ -19,14 +19,13 @@
 
   <properties>
     <assertj-core.version>3.9.1</assertj-core.version>
-    <google-storage-wagon.version>1.0</google-storage-wagon.version>
     <java.version>16</java.version>
-    <junit-jupiter.version>5.7.0</junit-jupiter.version>
+    <junit-jupiter.version>5.8.2</junit-jupiter.version>
     <maven.compiler.source>${java.version}</maven.compiler.source>
     <maven.compiler.target>${java.version}</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <slf4j-log4j12.version>2.0.0-alpha1</slf4j-log4j12.version>
     <univocity-parsers.version>2.9.0</univocity-parsers.version>
+    <junit-jupiter-params.version>5.8.2</junit-jupiter-params.version>
   </properties>
 
   <modules>
@@ -35,16 +34,6 @@
   </modules>
 
   <dependencies>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-log4j12</artifactId>
-      <version>${slf4j-log4j12.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <version>${slf4j-log4j12.version}</version>
-    </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
@@ -60,7 +49,7 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-params</artifactId>
-      <version>5.7.0</version>
+      <version>${junit-jupiter-params.version}</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>

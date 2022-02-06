@@ -38,10 +38,8 @@ jobs:
           git commit -m "release: v-$app_version"
           git tag -a -m "$app_version" "$app_version"
 
-          # Deploy to GCP with maven
-          ./mvnw clean deploy \
-            -Drelease.archiva.rsultan.username=${ARCHIVA_USERNAME} \
-            -Drelease.archiva.rsultan.password=${ARCHIVA_PASSWORD}
+          # Build and Install to verify
+          ./mvnw clean install
 
           # Setting the next developement iteration
           ./set-version.sh snapshot

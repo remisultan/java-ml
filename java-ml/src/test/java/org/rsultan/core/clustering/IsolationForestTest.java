@@ -38,7 +38,7 @@ public class IsolationForestTest {
   @Test
   public void must_perform_isolation() {
     var df = Dataframes.create(new String[]{"x", "y", "response"}, rows);
-    var predict = new IsolationForest(10).setAnomalyThreshold(0.56).setSampleSize(15).train(df).predict(df);
+    var predict = new IsolationForest(10).setAnomalyThreshold(0.3).setSampleSize(15).train(df).predict(df);
     int anomalies = predict.filter("anomalies", obj -> obj.equals(1L)).getRowSize();
     int nonAnomalies = predict.filter("anomalies", obj -> obj.equals(0L)).getRowSize();
 
@@ -80,9 +80,9 @@ public class IsolationForestTest {
   @Test
   public void must_perform_isolation_and_retrieve_scores() {
     var df = Dataframes.create(new String[]{"x", "y", "response"}, rows);
-    var predict = new IsolationForest(10).setAnomalyThreshold(0.56).setSampleSize(15).setUseAnomalyScoresOnly(true).train(df).predict(df);
-    int anomalies = predict.filter("anomalies", (Number obj) -> obj.doubleValue() > 0.56).getRowSize();
-    int nonAnomalies = predict.filter("anomalies", (Number obj) -> obj.doubleValue() <= 0.56).getRowSize();
+    var predict = new IsolationForest(10).setAnomalyThreshold(0.3).setSampleSize(15).setUseAnomalyScoresOnly(true).train(df).predict(df);
+    int anomalies = predict.filter("anomalies", (Number obj) -> obj.doubleValue() > 0.3).getRowSize();
+    int nonAnomalies = predict.filter("anomalies", (Number obj) -> obj.doubleValue() <= 0.3).getRowSize();
 
     assertThat(anomalies).isBetween(1, predict.getRowSize());
     assertThat(nonAnomalies).isEqualTo(predict.getRowSize() - anomalies);
