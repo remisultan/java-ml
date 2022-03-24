@@ -7,6 +7,7 @@ import static org.nd4j.common.util.MathUtils.round;
 
 import java.util.List;
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.factory.Nd4j;
 import org.rsultan.core.tree.DecisionTreeLearning;
 import org.rsultan.core.tree.DecisionTreeRegressor;
 import org.rsultan.core.tree.domain.Node;
@@ -44,17 +45,17 @@ public class RandomForestRegressor extends RandomForestLearning {
 
   @Override
   protected List<?> getResponseValues(Dataframe dataframe) {
-    return dataframe.get(responseVariableName);
+    return dataframe.getColumn(responseVariableName);
   }
 
   @Override
   protected INDArray buildY(Dataframe dataframe) {
-    return dataframe.toMatrix(responseVariableName);
+    return dataframe.copy().select(responseVariableName).toMatrix();
   }
 
   @Override
   protected DecisionTreeLearning buildDecisionTreeLearning() {
-    return new RandomForestRegressorTree(treeDepth, features, responses)
+    return new DecisionTreeRegressor(treeDepth)
         .setResponseVariableName(responseVariableName)
         .setPredictionColumnName(predictionColumnName);
   }
@@ -68,6 +69,14 @@ public class RandomForestRegressor extends RandomForestLearning {
   protected List<?> getFinalPredictions(INDArray predictionMatrix) {
     double[] bestResponses = predictionMatrix.mean(true, 0).toDoubleVector();
     return stream(bestResponses).boxed().collect(toList());
+  }
+
+  @Override
+  protected List<INDArray> getTreePredictions(INDArray predictionMatrix) {
+    return this.trees.parallelStream()
+        .map(tree -> tree.setResponses(responses).<Double>predict(predictionMatrix))
+        .map(Nd4j::create)
+        .collect(toList());
   }
 
   @Override
@@ -88,30 +97,9 @@ public class RandomForestRegressor extends RandomForestLearning {
     return this;
   }
 
-  private static class RandomForestRegressorTree extends DecisionTreeRegressor {
-
-    private final List<?> parentFeatureNames;
-
-    public RandomForestRegressorTree(
-        int depth,
-        List<?> parentFeatureNames,
-        List<?> responses
-
-    ) {
-      super(depth);
-      this.parentFeatureNames = parentFeatureNames;
-      this.responses = responses;
-    }
-
-    @Override
-    protected Object getPredictionNodeFeatureName(Node node) {
-      return parentFeatureNames.get((int) features.get(node.feature()));
-    }
-
-    @Override
-    protected Object getNodePrediction(Node node) {
-      return node.predictedResponse();
-    }
+  @Override
+  public RandomForestRegressor setShuffle(boolean shuffle) {
+    super.setShuffle(shuffle);
+    return this;
   }
-
 }

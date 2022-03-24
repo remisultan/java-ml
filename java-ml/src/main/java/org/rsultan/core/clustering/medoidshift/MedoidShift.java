@@ -5,6 +5,7 @@ import static java.util.stream.LongStream.range;
 import static java.util.stream.LongStream.rangeClosed;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
@@ -74,8 +75,8 @@ public abstract class MedoidShift implements Clustering {
     var distances = medoidFactory.computeDistance(Xpredict, centroids.transpose());
     var indices = Nd4j.argMin(distances, 1);
     var predictions = centroids.transpose().get(indices);
-    return dataframe.addColumn(new Column<>("predictions",
-        range(0, predictions.rows()).mapToObj(predictions::getRow).collect(toList())));
+    return dataframe.copy().addColumn("predictions",
+        range(0, predictions.rows()).mapToObj(predictions::getRow).collect(toList()));
   }
 
 
@@ -83,8 +84,11 @@ public abstract class MedoidShift implements Clustering {
     var centroids = range(0, this.centroids.columns()).boxed()
         .map(idx -> Arrays.toString(this.centroids.getColumn(idx).toDoubleVector()))
         .collect(toList());
-    var indices = new Column<>("K", rangeClosed(1, this.centroids.columns()).boxed().collect(toList()));
-    Dataframes.create(indices, new Column<>("centroids", centroids)).tail();
+    final List<List<?>> collect = rangeClosed(1, this.centroids.columns()).boxed().map(List::of)
+        .collect(toList());
+    Dataframes.create(new String[]{"K"}, collect)
+        .addColumn("centroids", centroids)
+        .show(centroids.size());
   }
 
   public INDArray getCentroids() {

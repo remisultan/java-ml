@@ -14,7 +14,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
-import org.apache.commons.lang3.NotImplementedException;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.rsultan.core.clustering.Clustering;
 import org.rsultan.dataframe.Column;
@@ -25,7 +24,7 @@ public class DBSCAN implements Clustering {
   private final double radius;
   private final int minSamples;
 
-  public DBSCAN(double radius, int minSamples) {
+  public  DBSCAN(double radius, int minSamples) {
     this.radius = radius <= 0 ? 1 : radius;
     this.minSamples = minSamples < 1 ? 5 : minSamples;
   }
@@ -37,7 +36,7 @@ public class DBSCAN implements Clustering {
 
   @Override
   public Dataframe predict(Dataframe dataframe) {
-    var X = normalizeZeroMeanAndUnitVariance(dataframe.toMatrix());
+    var X = normalizeZeroMeanAndUnitVariance(dataframe.copy().toMatrix());
     var visited = new boolean[X.rows()];
     var clusters = new ArrayList<Set<Integer>>();
 
@@ -76,9 +75,9 @@ public class DBSCAN implements Clustering {
     var clusterNumber = buildColumn(clusterResults, ClusterResult::cluster);
     var clusterDensity = buildColumn(clusterResults, ClusterResult::density);
 
-    return dataframe
-        .addColumn(new Column<>("cluster", clusterNumber))
-        .addColumn(new Column<>("density", clusterDensity));
+   return dataframe.copy()
+       .addColumn("cluster", clusterNumber)
+       .addColumn("density", clusterDensity);
   }
 
   private List<Integer> buildColumn(List<ClusterResult> clustersResults,

@@ -62,9 +62,10 @@ public class DecisionTreeLearningTest {
     var predictions = decisionTreeClassifier
         .setResponseVariableName("strColumn")
         .setPredictorNames(predictorNames)
+        .setShuffle(true)
         .train(dataframe)
         .predict(dataframe)
-        .get("predictions");
+        .getColumn("predictions");
 
     assertThat(predictions).containsExactly(expected);
 
@@ -83,7 +84,7 @@ public class DecisionTreeLearningTest {
         .setPredictorNames(predictorNames)
         .train(dataframe))
         .predict(dataframe)
-        .get("predictions");
+        .getColumn("predictions");
 
     assertThat(predictions).containsExactly(expected);
   }
@@ -100,7 +101,7 @@ public class DecisionTreeLearningTest {
         .setPredictorNames("x", "x2", "x3")
         .train(dataframe)
         .predict(dataframe)
-        .get("predictions");
+        .getColumn("predictions");
 
     assertThat(predictions).containsExactly(3.0, 3.0, 3.0, 3.0, 3.0);
   }
@@ -116,7 +117,7 @@ public class DecisionTreeLearningTest {
         .setPredictorNames("x", "x2", "x3")
         .train(dataframe))
         .predict(dataframe)
-        .get("predictions");
+        .getColumn("predictions");
 
     assertThat(predictions).containsExactly(3.0, 3.0, 3.0, 3.0, 3.0);
   }

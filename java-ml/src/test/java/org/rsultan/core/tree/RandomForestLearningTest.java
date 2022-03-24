@@ -46,23 +46,24 @@ public class RandomForestLearningTest {
 
   @ParameterizedTest
   @MethodSource("params_that_must_perform_decision_tree_classifier")
-  public void must_perform_decision_tree_classifier(RandomForestClassifier decisionTreeClassifier,
+  public void must_perform_decision_tree_classifier(RandomForestClassifier randomForestClassifier,
       int treeDepth,
       int sampleFeatures,
       double sampleSizeRatio
   )
       throws IOException {
     var dataframe = Dataframes.csv(getResourceFileName("org/rsultan/utils/example-classif.csv"));
-    var predictions = decisionTreeClassifier
+    var predictions = randomForestClassifier
         .setResponseVariableName("strColumn")
         .setPredictionColumnName("predictions")
         .setPredictorNames("x", "x2", "x3")
         .setTreeDepth(treeDepth)
         .setSampleFeatureSize(sampleFeatures)
         .setSampleSizeRatio(sampleSizeRatio)
-        .train(dataframe)
-        .predict(dataframe)
-        .get("predictions");
+        .setShuffle(true)
+        .train(dataframe.copy())
+        .predict(dataframe.copy())
+        .getColumn("predictions");
 
     assertThat(predictions).hasSize(5);
   }
@@ -70,13 +71,13 @@ public class RandomForestLearningTest {
   @ParameterizedTest
   @MethodSource("params_that_must_perform_decision_tree_regressor")
   public void must_perform_decision_tree_regressor(
-      RandomForestRegressor decisionTreeRegressor,
+      RandomForestRegressor randomForestRegressor,
       int treeDepth,
       int sampleFeatures,
       double sampleSizeRatio
   ) throws IOException {
     var dataframe = Dataframes.csv(getResourceFileName("org/rsultan/utils/example-classif.csv"));
-    var predictions = decisionTreeRegressor
+    var predictions = randomForestRegressor
         .setResponseVariableName("y")
         .setPredictionColumnName("predictions")
         .setPredictorNames("x", "x2", "x3")
@@ -85,7 +86,7 @@ public class RandomForestLearningTest {
         .setSampleSizeRatio(sampleSizeRatio)
         .train(dataframe)
         .predict(dataframe)
-        .get("predictions");
+        .getColumn("predictions");
 
     assertThat(predictions).hasSize(5);
   }

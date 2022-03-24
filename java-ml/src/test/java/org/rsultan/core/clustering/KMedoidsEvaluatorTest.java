@@ -10,6 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.rsultan.core.clustering.type.MedoidType.MEAN;
 import static org.rsultan.core.clustering.type.MedoidType.MEDIAN;
 
+import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -43,17 +44,15 @@ public class KMedoidsEvaluatorTest {
   @MethodSource("params_that_must_apply_kmedoids")
   public void must_apply_kmedoids(KMedoidEvaluator kMedoidEvaluator) {
     var dataframe = Dataframes.create(
-        new Column<>("c1", range(0, 1000).map(idx -> nextLong(0, 1000)).boxed().collect(toList())),
-        new Column<>("c2",
-            range(0, 1000).mapToDouble(idx -> nextDouble(0, 1000)).boxed().collect(toList())),
-        new Column<>("c3", range(0, 1000).boxed().map(idx -> nextFloat(0, 1000)).collect(toList())),
-        new Column<>("c4", range(0, 1000).boxed().map(idx -> nextInt(0, 1000)).collect(toList()))
+        new String[]{"c1", "c2", "c3", "c4"},
+        range(0, 1000).mapToObj(idx ->
+            List.of(nextLong(0, 1000), nextDouble(0, 1000), nextFloat(0, 1000), nextInt(0, 1000))
+        ).collect(toList())
     );
     var targetDataframe = kMedoidEvaluator.evaluate(dataframe);
-    targetDataframe.tail();
+    targetDataframe.show(100);
 
-    assertThat(targetDataframe.getData()).hasSize(2);
-    assertThat(targetDataframe.getData().get("K")).isNotEmpty();
-    assertThat(targetDataframe.getData().get("sumOfSquares")).isNotEmpty();
+    assertThat(targetDataframe.getColumn("K")).isNotEmpty();
+    assertThat(targetDataframe.getColumn("sumOfSquares")).isNotEmpty();
   }
 }

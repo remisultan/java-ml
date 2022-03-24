@@ -30,31 +30,27 @@ public abstract class DecisionTreeLearning extends ModelParameters<DecisionTreeL
   protected final ImpurityService impurityService;
   protected Node tree;
   protected List<?> responses;
-  protected List<?> features;
 
   public DecisionTreeLearning(int depth, ImpurityStrategy strategy) {
     this.depth = depth > 0 ? depth : 1;
     this.impurityService = strategy.getImpurityService();
-
   }
 
   protected abstract <T extends Number> T computePredictedResponse(INDArray array);
 
   protected abstract <T> T getNodePrediction(Node number);
 
-  protected abstract <T> T getPredictionNodeFeatureName(Node node);
-
-  public DecisionTreeLearning train(INDArray X, INDArray Y) {
-    this.tree = buildTree(X, Y, depth);
+  public DecisionTreeLearning train(INDArray X, INDArray y) {
+    shuffle(X, y);
+    this.tree = buildTree(X, y, depth);
     return this;
   }
 
-  public <T> List<T> predict(int numRows, Dataframe dataframe) {
-    return range(0, numRows).mapToObj(row -> {
+  public <T> List<T> predict(INDArray indArray) {
+    return range(0, indArray.rows()).mapToObj(row -> {
       var node = tree;
       while (nonNull(node) && nonNull(node.left())) {
-        var featureName = getPredictionNodeFeatureName(node);
-        double featureValue = dataframe.<Number>get(featureName).get(row).doubleValue();
+        double featureValue = indArray.getDouble(row, node.feature());
         node = featureValue < node.featureThreshold() ? node.left() : node.right();
       }
       return this.<T>getNodePrediction(node);
@@ -169,8 +165,16 @@ public abstract class DecisionTreeLearning extends ModelParameters<DecisionTreeL
     }
   }
 
-  public DecisionTreeLearning setFeatures(List<?> features) {
-    this.features = features;
+  protected Dataframe getPredictDataframe(Dataframe dataframe) {
+    try {
+      return dataframe.copy().mapWithout(responseVariableName);
+    } catch (Exception e) {
+      return dataframe.copy();
+    }
+  }
+
+  public DecisionTreeLearning setResponses(List<?> responses) {
+    this.responses = responses;
     return this;
   }
 }

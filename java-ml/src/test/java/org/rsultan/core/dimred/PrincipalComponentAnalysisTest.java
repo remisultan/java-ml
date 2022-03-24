@@ -5,6 +5,7 @@ import static org.nd4j.linalg.ops.transforms.Transforms.cosineSim;
 import static org.rsultan.utils.TestUtils.getResourceFileName;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -12,7 +13,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.factory.Nd4j;
 import org.rsultan.core.ModelSerdeTestUtils;
+import org.rsultan.dataframe.Dataframe.Result;
 import org.rsultan.dataframe.Dataframes;
+import org.rsultan.dataframe.Row;
 
 public class PrincipalComponentAnalysisTest {
 
@@ -44,11 +47,13 @@ public class PrincipalComponentAnalysisTest {
     var predictions = pca.predict(df);
     var reconstruct = pca.reconstruct();
 
-    assertThat(predictions.getColumnSize()).isEqualTo(expectedColumns);
-    assertThat(predictions.getRowSize()).isEqualTo(df.getRowSize());
+    var result = predictions.getResult();
+    assertThat(result.header().size()).isEqualTo(expectedColumns);
+    assertThat(result.rows().size()).isEqualTo(5);
 
-    assertThat(reconstruct.getColumnSize()).isEqualTo(df.getColumnSize());
-    assertThat(reconstruct.getRowSize()).isEqualTo(df.getRowSize());
+    var result1 = reconstruct.getResult();
+    assertThat(result1.header().size()).isEqualTo(5);
+    assertThat(result1.rows().size()).isEqualTo(result.rows().size());
 
     assertThat(cosineSim(reconstruct.mapWithout("strColumn").toMatrix(),
         df.mapWithout("strColumn").toMatrix())).isLessThanOrEqualTo(reconstructSimilarity);
@@ -66,11 +71,13 @@ public class PrincipalComponentAnalysisTest {
     var predictions = pca.predict(df);
     var reconstruct = pca.reconstruct();
 
-    assertThat(predictions.getColumnSize()).isEqualTo(expectedColumns);
-    assertThat(predictions.getRowSize()).isEqualTo(df.getRowSize());
+    var result = predictions.getResult();
+    assertThat(result.header().size()).isEqualTo(expectedColumns);
+    assertThat(result.rows().size()).isEqualTo(5);
 
-    assertThat(reconstruct.getColumnSize()).isEqualTo(df.getColumnSize());
-    assertThat(reconstruct.getRowSize()).isEqualTo(df.getRowSize());
+    var result1 = reconstruct.getResult();
+    assertThat(result1.header().size()).isEqualTo(5);
+    assertThat(result1.rows().size()).isEqualTo(result.rows().size());
 
     assertThat(cosineSim(reconstruct.mapWithout("strColumn").toMatrix(),
         df.mapWithout("strColumn").toMatrix())).isLessThanOrEqualTo(reconstructSimilarity);

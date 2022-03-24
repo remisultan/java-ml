@@ -18,9 +18,9 @@ public class DBSCANExample {
   public static void main(String[] args) throws IOException {
     var df = Dataframes.csv(args[0], ",", "\"", false);
 
-    var predicted = new DBSCAN(1, 5)
-        .predict(df.mapWithout("c4"));
+    new DBSCAN(1, 5)
+        .predict(df.mapWithout("c4"))
+        .show(150);
 
-    predicted.addColumn(df.getColumns()[4]).show(150);
   }
 }

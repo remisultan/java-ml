@@ -19,19 +19,20 @@ import org.rsultan.dataframe.Row;
 
 public class DBSCANTest {
 
-  private static Row[] rows;
+  private static List<List<?>> rows;
+
 
   static {
     rows = List.of(0, 3, 6, 7, 8).stream()
         .map(DBSCANTest::createCircleDataAroundCenter)
         .flatMap(List::stream)
-        .toArray(Row[]::new);
+        .collect(toList());
   }
-
-  private static List<Row> createCircleDataAroundCenter(int radius) {
+  private static List<List<Double>> createCircleDataAroundCenter(int radius) {
     return rangeClosed(-radius, radius).boxed().flatMap(x -> {
       double y = Math.sqrt(radius * radius - x * x);
-      return List.of(new Row(x, y), new Row(x, -y)).stream();
+      final double e1 = x.doubleValue();
+      return Stream.of(List.of(e1, y), List.of(e1, -y));
     }).collect(toList());
   }
 
@@ -58,9 +59,9 @@ public class DBSCANTest {
     var df = Dataframes.create(new String[]{"x", "y"}, rows);
     var predictDf = dbScan.predict(df);
 
-    assertThat(predictDf.<Integer>get("cluster").stream().distinct().collect(toList()))
+    assertThat(predictDf.<Integer>getColumn("cluster").stream().distinct().collect(toList()))
         .containsOnly(expectedClusters);
-    assertThat(predictDf.<Integer>get("density").stream().distinct().collect(toList()))
+    assertThat(predictDf.<Integer>getColumn("density").stream().distinct().collect(toList()))
         .containsOnly(expectedDensity);
   }
 
@@ -68,10 +69,9 @@ public class DBSCANTest {
   public void must_throw_NotImplementedException_when_train() {
     var dbscan = new DBSCAN(3, 4);
     var exception = assertThrows(IllegalCallerException.class,
-        () -> dbscan.train(Dataframes.create()));
+        () -> dbscan.train(Dataframes.create(new String[]{}, List.of())));
 
     assertThat(exception.getMessage())
         .isEqualTo("Directly predict since this is a clustering algorithm");
   }
-
 }

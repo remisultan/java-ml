@@ -9,6 +9,7 @@ import static org.apache.commons.lang3.RandomUtils.nextLong;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.rsultan.core.ModelSerdeTestUtils.serdeTrainable;
 
+import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -49,12 +50,9 @@ public class KMedoidsTest {
   @MethodSource("params_that_must_apply_kmedoids")
   public void must_apply_kmedoids(KMedoids kMedoids) {
     var dataframe = Dataframes.create(
-        new Column<>("c1", range(0, 100).map(idx -> nextLong(0, 100)).boxed().collect(toList())),
-        new Column<>("c2",
-            range(0, 100).mapToDouble(idx -> nextDouble(0, 100)).boxed().collect(toList())),
-        new Column<>("c3", range(0, 100).boxed().map(idx -> nextFloat(0, 100)).collect(toList())),
-        new Column<>("c4", range(0, 100).boxed().map(idx -> nextInt(0, 100)).collect(toList()))
-    );
+        new String[]{"c1", "c2", "c3", "c4"}, range(0, 100).mapToObj(idx ->
+            List.of(nextLong(0, 100), nextDouble(0, 100), nextFloat(0, 100), nextInt(0, 100))
+        ).collect(toList()));
     kMedoids.train(dataframe);
     kMedoids.showMetrics();
 
@@ -71,12 +69,9 @@ public class KMedoidsTest {
   @MethodSource("params_that_must_apply_kmedoids")
   public void must_serde_and_apply_kmedoids(KMedoids kMedoids) {
     var dataframe = Dataframes.create(
-        new Column<>("c1", range(0, 100).map(idx -> nextLong(0, 100)).boxed().collect(toList())),
-        new Column<>("c2",
-            range(0, 100).mapToDouble(idx -> nextDouble(0, 100)).boxed().collect(toList())),
-        new Column<>("c3", range(0, 100).boxed().map(idx -> nextFloat(0, 100)).collect(toList())),
-        new Column<>("c4", range(0, 100).boxed().map(idx -> nextInt(0, 100)).collect(toList()))
-    );
+        new String[]{"c1", "c2", "c3", "c4"}, range(0, 100).mapToObj(idx ->
+            List.of(nextLong(0, 100), nextDouble(0, 100), nextFloat(0, 100), nextInt(0, 100))
+        ).collect(toList()));
     var kMedoid = serdeTrainable(kMedoids.train(dataframe));
     kMedoid.showMetrics();
 

@@ -20,8 +20,7 @@ public class LogisticRegressionExample {
   }
 
   public static void main(String[] args) throws IOException {
-    var df = Dataframes.csvTrainTest(args[0], ",", "\"", false).shuffle();
-    var dfSplit = df.split();
+    var df = Dataframes.csv(args[0], ",", "\"", false);
 
     var setosaRegression = new LogisticRegression(1000, 0.1)
         .setResponseVariableName("c4")
@@ -30,18 +29,18 @@ public class LogisticRegressionExample {
         .setRegularization(RIDGE)
         .setLambda(0.019)
         .setChosenLabel("Iris-setosa")
-        .train(dfSplit.train());
-    setosaRegression.getHistory().tail();
-    setosaRegression.predict(dfSplit.test()).show(1000);
+        .train(df);
+    setosaRegression.getHistory().show(1000);
+    setosaRegression.predict(df).show(1000);
 
     var versicolorRegression = new LogisticRegression(1000, 0.1)
         .setResponseVariableName("c4")
         .setPredictorNames("c0", "c1", "c2", "c3")
         .setChosenLabel("Iris-versicolor")
         .setLossAccuracyOffset(100)
-        .train(dfSplit.train());
-    versicolorRegression.getHistory().tail();
-    versicolorRegression.predict(dfSplit.test()).show(1000);
+        .train(df);
+    setosaRegression.getHistory().show(1000);
+    versicolorRegression.predict(df).show(1000);
 
     var virginicaRegression = new LogisticRegression(1000, 0.1)
         .setResponseVariableName("c4")
@@ -50,8 +49,8 @@ public class LogisticRegressionExample {
         .setRegularization(LASSO)
         .setLambda(0.0015)
         .setLossAccuracyOffset(100)
-        .train(dfSplit.train());
-    virginicaRegression.getHistory().tail();
-    virginicaRegression.predict(dfSplit.test()).show(1000);
+        .train(df);
+    virginicaRegression.getHistory().show(1000);
+    virginicaRegression.predict(df).show(1000);
   }
 }

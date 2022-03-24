@@ -56,11 +56,11 @@ public class SoftmaxRegressionTest {
         .setPredictionColumnName("predictions")
         .setLambda(0.1)
         .setLossAccuracyOffset(10)
-        .train(dataframe);
-    softmaxRegression.getHistory().tail();
+        .setShuffle(true).train(dataframe);
+    softmaxRegression.getHistory().show(10);
 
     var dfPredict = softmaxRegression.predict(dataframe);
-    assertThat(dfPredict.<String>get("predictions").stream().toArray())
+    assertThat(dfPredict.<String>getColumn("predictions").stream().toArray())
         .containsExactly(expectedPredictions);
   }
 
@@ -81,10 +81,10 @@ public class SoftmaxRegressionTest {
         .setLambda(0.1)
         .setLossAccuracyOffset(10)
         .train(dataframe));
-    softmaxRegression.getHistory().tail();
+    softmaxRegression.getHistory().show(10);
 
     var dfPredict = softmaxRegression.predict(dataframe);
-    assertThat(dfPredict.<String>get("predictions").stream().toArray())
+    assertThat(dfPredict.<String>getColumn("predictions").stream().toArray())
         .containsExactly(expectedPredictions);
   }
 }

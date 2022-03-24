@@ -1,90 +1,143 @@
 package org.rsultan.core.clustering;
 
-import static java.lang.Boolean.FALSE;
-import static java.lang.Boolean.TRUE;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.rangeClosed;
-import static org.apache.commons.lang3.RandomUtils.nextBoolean;
 import static org.apache.commons.lang3.RandomUtils.nextDouble;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.junit.jupiter.api.Test;
-import org.rsultan.core.clustering.ensemble.evaluation.TPRThresholdEvaluator;
-import org.rsultan.core.clustering.ensemble.isolationforest.ExtendedIsolationForest;
-import org.rsultan.core.clustering.ensemble.isolationforest.IsolationForest;
+import org.rsultan.core.ensemble.isolationforest.evaluation.TPRThresholdEvaluator;
+import org.rsultan.core.ensemble.isolationforest.ExtendedIsolationForest;
+import org.rsultan.core.ensemble.isolationforest.IsolationForest;
 import org.rsultan.dataframe.Dataframes;
-import org.rsultan.dataframe.Row;
 
 public class IsolationForestTest {
 
-  private static Row[] rows;
+  private static List<List<?>> rows;
 
   static {
-    rows = List.of(0, 3, 6, 7, 8).stream()
+    rows = Stream.of(0, 3, 6, 7, 8, 100)
         .map(IsolationForestTest::createCircleDataAroundCenter)
         .flatMap(List::stream)
-        .toArray(Row[]::new);
+        .collect(Collectors.toList());
   }
 
-  private static List<Row> createCircleDataAroundCenter(int radius) {
-    return rangeClosed(-radius, radius).boxed().flatMap(x -> {
+  private static List<List<Double>> createCircleDataAroundCenter(int radius) {
+    return rangeClosed(-radius, radius).mapToDouble(x -> x).boxed().flatMap(x -> {
       double y = Math.sqrt(radius * radius - x * x);
-      long response = nextDouble() > 0.7 ? 1L : 0L;
-      return List.of(new Row(x, y, response), new Row(x, -y, response)).stream();
-    }).collect(toList());
+      double response = nextDouble() > 0.7 ? 1L : 0L;
+      return Stream.of(List.of(x, y, response), List.of(x, -y, response));
+    }).toList();
   }
 
   @Test
   public void must_perform_isolation() {
     var df = Dataframes.create(new String[]{"x", "y", "response"}, rows);
-    var predict = new IsolationForest(10).setAnomalyThreshold(0.3).setSampleSize(15).train(df).predict(df);
-    int anomalies = predict.filter("anomalies", obj -> obj.equals(1L)).getRowSize();
-    int nonAnomalies = predict.filter("anomalies", obj -> obj.equals(0L)).getRowSize();
+    final double anomalyThreshold = 0.4;
+    var predict = new IsolationForest(10).setAnomalyThreshold(anomalyThreshold)
+        .setUseAnomalyScoresOnly(true)
+        .setSampleSize(15)
+        .train(df).predict(df);
 
-    assertThat(anomalies).isBetween(1, predict.getRowSize());
-    assertThat(nonAnomalies).isEqualTo(predict.getRowSize() - anomalies);
+    int all = predict.copy().getResult().rows().size();
+    int anomalies = predict.copy().filter("anomalies", (Double d) -> d >= anomalyThreshold)
+        .getResult().rows().size();
+    int nonAnomalies = predict.copy().filter("anomalies", (Double d) -> d < anomalyThreshold)
+        .getResult().rows().size();
+
+    predict.copy().show(all);
+
+    assertThat(anomalies).isBetween(1, all);
+    assertThat(nonAnomalies).isEqualTo(all - anomalies);
+  }
+
+  @Test
+  public void must_perform_isolation_without_anomaly_scores() {
+    var df = Dataframes.create(new String[]{"x", "y", "response"}, rows);
+    final double anomalyThreshold = 0.4;
+    var predict = new IsolationForest(10).setAnomalyThreshold(anomalyThreshold)
+        .setUseAnomalyScoresOnly(false)
+        .setSampleSize(15)
+        .train(df).predict(df);
+    int all = predict.copy().getResult().rows().size();
+    int anomalies = predict.copy().filter("anomalies", (Double d) -> d == 1)
+        .getResult()
+        .rows().size();
+    int nonAnomalies = predict.copy().filter("anomalies", (Double d) -> d == 0)
+        .getResult().rows().size();
+
+    assertThat(anomalies).isBetween(1, all);
+    assertThat(nonAnomalies).isEqualTo(all - anomalies);
   }
 
   @Test
   public void should_evaluate_tpr() {
-    var df = Dataframes.trainTest(new String[]{"x", "y", "response"}, rows);
+    var df = Dataframes.create(new String[]{"x", "y", "response"}, rows);
     var model = new IsolationForest(10).setSampleSize(15);
-    var evaluator = new TPRThresholdEvaluator("response", "anomalies").setDesiredTPR(0.9).setLearningRate(0.01);
+    var evaluator = new TPRThresholdEvaluator()
+        .setDesiredTPR(0.9)
+        .setResponseVariableIndex(2)
+        .setTrainTestThreshold(0.75)
+        .setLearningRate(0.01);
     var threshold = evaluator.evaluate(model, df);
     evaluator.showMetrics();
     assertThat(threshold).isGreaterThan(0.4);
   }
 
   @Test
-  public void must_perform_extended_isolation() {
+  public void must_perform_extended_isolation_forest() {
     var df = Dataframes.create(new String[]{"x", "y", "response"}, rows);
-    var predict = new ExtendedIsolationForest(10, 1).setAnomalyThreshold(0.56).setSampleSize(15).train(df).predict(df);
-    int anomalies = predict.filter("anomalies", obj -> obj.equals(1L)).getRowSize();
-    int nonAnomalies = predict.filter("anomalies", obj -> obj.equals(0L)).getRowSize();
+    final double anomalyThreshold = 0.4;
+    var predict = new ExtendedIsolationForest(10, 1).setAnomalyThreshold(anomalyThreshold)
+        .setUseAnomalyScoresOnly(true)
+        .setSampleSize(15)
+        .train(df).predict(df);
 
-    assertThat(anomalies).isBetween(1, predict.getRowSize());
-    assertThat(nonAnomalies).isEqualTo(predict.getRowSize() - anomalies);
+    int all = predict.copy().getResult().rows().size();
+    int anomalies = predict.copy().filter("anomalies", (Double d) -> d >= anomalyThreshold)
+        .getResult().rows().size();
+    int nonAnomalies = predict.copy().filter("anomalies", (Double d) -> d < anomalyThreshold)
+        .getResult().rows().size();
+
+    predict.copy().show(all);
+
+    assertThat(anomalies).isBetween(1, all);
+    assertThat(nonAnomalies).isEqualTo(all - anomalies);
   }
 
   @Test
-  public void should_evaluate_extended_tpr() {
-    var df = Dataframes.trainTest(new String[]{"x", "y", "response"}, rows);
+  public void must_perform_extended_isolation_without_anomaly_scores() {
+    var df = Dataframes.create(new String[]{"x", "y", "response"}, rows);
+    final double anomalyThreshold = 0.4;
+    var predict = new ExtendedIsolationForest(10, 1).setAnomalyThreshold(anomalyThreshold)
+        .setUseAnomalyScoresOnly(false)
+        .setSampleSize(15)
+        .train(df).predict(df);
+    int all = predict.copy().getResult().rows().size();
+    int anomalies = predict.copy().filter("anomalies", (Double d) -> d == 1)
+        .getResult()
+        .rows().size();
+    int nonAnomalies = predict.copy().filter("anomalies", (Double d) -> d == 0)
+        .getResult().rows().size();
+
+    assertThat(anomalies).isBetween(1, all);
+    assertThat(nonAnomalies).isEqualTo(all - anomalies);
+  }
+
+  @Test
+  public void should_evaluate_tpr_with_extended() {
+    var df = Dataframes.create(new String[]{"x", "y", "response"}, rows);
     var model = new ExtendedIsolationForest(10, 1).setSampleSize(15);
-    var evaluator = new TPRThresholdEvaluator("response", "anomalies").setDesiredTPR(0.9).setLearningRate(0.01);
+    var evaluator = new TPRThresholdEvaluator()
+        .setDesiredTPR(0.9)
+        .setResponseVariableIndex(2)
+        .setTrainTestThreshold(0.75)
+        .setLearningRate(0.01);
     var threshold = evaluator.evaluate(model, df);
     evaluator.showMetrics();
     assertThat(threshold).isGreaterThan(0.4);
-  }
-
-  @Test
-  public void must_perform_isolation_and_retrieve_scores() {
-    var df = Dataframes.create(new String[]{"x", "y", "response"}, rows);
-    var predict = new IsolationForest(10).setAnomalyThreshold(0.3).setSampleSize(15).setUseAnomalyScoresOnly(true).train(df).predict(df);
-    int anomalies = predict.filter("anomalies", (Number obj) -> obj.doubleValue() > 0.3).getRowSize();
-    int nonAnomalies = predict.filter("anomalies", (Number obj) -> obj.doubleValue() <= 0.3).getRowSize();
-
-    assertThat(anomalies).isBetween(1, predict.getRowSize());
-    assertThat(nonAnomalies).isEqualTo(predict.getRowSize() - anomalies);
   }
 }

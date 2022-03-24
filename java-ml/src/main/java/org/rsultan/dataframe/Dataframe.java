@@ -1,133 +1,207 @@
 package org.rsultan.dataframe;
 
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
 import static java.util.stream.IntStream.range;
-import static java.util.stream.Stream.of;
 
+import java.io.Serializable;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.Executors;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.rsultan.dataframe.printer.DataframePrinter;
-import org.rsultan.dataframe.printer.DataframeWriter;
-import org.rsultan.dataframe.transform.filter.FilterDataframe;
-import org.rsultan.dataframe.transform.filter.FilterTransform;
-import org.rsultan.dataframe.transform.map.MapDataframe;
-import org.rsultan.dataframe.transform.map.MapTransform;
-import org.rsultan.dataframe.transform.matrix.MatrixDataframe;
-import org.rsultan.dataframe.transform.matrix.MatrixTransform;
+import org.rsultan.dataframe.engine.BaseDataProcessor;
+import org.rsultan.dataframe.engine.filter.RowBiPredicate;
+import org.rsultan.dataframe.engine.filter.RowPredicate;
+import org.rsultan.dataframe.engine.label.LabelValueIndexer;
+import org.rsultan.dataframe.engine.mapper.impl.AddColumnFromList;
+import org.rsultan.dataframe.engine.mapper.impl.AddColumnMapper;
+import org.rsultan.dataframe.engine.mapper.impl.BiAddColumnMapper;
+import org.rsultan.dataframe.engine.mapper.impl.BiColumnTransformer;
+import org.rsultan.dataframe.engine.mapper.impl.ColumnTransformer;
+import org.rsultan.dataframe.engine.mapper.impl.OneHotEncoderMapper;
+import org.rsultan.dataframe.engine.mapper.impl.RemoveColumnMapper;
+import org.rsultan.dataframe.engine.mapper.impl.SelectColumnMapper;
+import org.rsultan.dataframe.engine.mapper.impl.ShuffleAccumulator;
+import org.rsultan.dataframe.engine.mapper.impl.SupplierRowMapper;
+import org.rsultan.dataframe.engine.sink.SinkDataProcessor;
+import org.rsultan.dataframe.engine.sink.impl.ConsoleSink;
+import org.rsultan.dataframe.engine.sink.impl.FileSink;
+import org.rsultan.dataframe.engine.sink.impl.MatrixSink;
+import org.rsultan.dataframe.engine.sink.impl.RowSink;
+import org.rsultan.dataframe.engine.source.SourceDataProcessor;
+import org.rsultan.dataframe.transform.FilterTransform;
+import org.rsultan.dataframe.transform.MapTransform;
+import org.rsultan.dataframe.transform.MatrixTransform;
+import org.rsultan.dataframe.transform.ShuffleTransform;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class Dataframe implements MapTransform, FilterTransform, MatrixTransform {
+public class Dataframe implements MapTransform, FilterTransform, MatrixTransform, ShuffleTransform {
 
-  private final Map<?, List<?>> data;
-  private final Column<?>[] columns;
-  private final int rowSize;
+  private static final Logger LOG = LoggerFactory.getLogger(Dataframe.class);
 
-  private final MapTransform mapTransform;
-  private final FilterTransform filterTransform;
-  private final MatrixTransform matrixTransform;
-
-  Dataframe(Column<?>[] columns) {
-    this.columns = columns;
-    this.data = stream(columns)
-        .collect(toMap(Column::columnName, Column::values, (e1, e2) -> e1, LinkedHashMap::new));
-    var sizes = this.data.values().stream().map(List::size).distinct().collect(toList());
-    if (sizes.size() > 1) {
-      throw new IllegalArgumentException("Dataframe column values should have the same size");
-    }
-    this.rowSize = !sizes.isEmpty() ? sizes.get(0) : 0;
-
-    this.mapTransform = new MapDataframe(this);
-    this.filterTransform = new FilterDataframe(this);
-    this.matrixTransform = new MatrixDataframe(this);
+  private static record Entry<K, V>(K key, V value) implements Serializable {
   }
 
-  Dataframe(String[] columnNames, Row[] rows) {
-    this(getColumnsFromRows(columnNames, rows));
+  private final List<Entry<Class<? extends BaseDataProcessor>, Object[]>> steps;
+
+  Dataframe(List<Entry<Class<? extends BaseDataProcessor>, Object[]>> steps) {
+    this.steps = steps;
   }
 
-  private static Column<?>[] getColumnsFromRows(String[] columnNames, Row[] rows) {
-    var sizes = stream(rows).map(Row::values).map(List::size).distinct().collect(toList());
-    if (sizes.size() > 1) {
-      throw new IllegalArgumentException("Dataframe row values should have the same size");
-    }
-    if (columnNames.length != sizes.get(0)) {
-      throw new IllegalArgumentException(
-          "Dataframe row values should have the same size has the columns");
-    }
-    return range(0, columnNames.length).mapToObj(idx -> {
-      var column = new Column<>(columnNames[idx], new ArrayList<>());
-      stream(rows).parallel().map(row -> row.values().get(idx))
-          .forEachOrdered(column.values()::add);
-      return column;
-    }).toArray(Column[]::new);
+  Dataframe(Class<? extends SourceDataProcessor> sourceDataProcessor, Object... args) {
+    this(new ArrayList<>());
+    addStep(sourceDataProcessor, args);
   }
 
   public Dataframe select(String... columnNames) {
-    return columnNames.length == 0 ? this : Dataframes.create(
-        stream(columnNames)
-            .map(colName -> new Column<>(colName, this.get(colName)))
-            .toArray(Column[]::new)
-    );
+    addStep(SelectColumnMapper.class, new Object[]{columnNames});
+    return this;
   }
 
   public <SOURCE1> Dataframe filter(String columnName, Predicate<SOURCE1> predicate) {
-    return filterTransform.filter(columnName, predicate);
+    addStep(RowPredicate.class, columnName, predicate);
+    return this;
   }
 
   public <SOURCE1, SOURCE2> Dataframe filter(
       String sourceColumn1,
       String sourceColumn2,
       BiPredicate<SOURCE1, SOURCE2> predicate) {
-    return filterTransform.filter(sourceColumn1, sourceColumn2, predicate);
+    addStep(RowBiPredicate.class, sourceColumn1, sourceColumn2, predicate);
+    return this;
   }
 
-  public <T> Dataframe addColumn(Column<T> column) {
-    return Dataframes.create(
-        of(columns, new Column[]{column}).flatMap(Arrays::stream).toArray(Column[]::new)
-    );
+  public <S, T> Dataframe transform(String columnName, Function<S, T> f) {
+    addStep(ColumnTransformer.class, columnName, f);
+    return this;
   }
 
-  public <T> Dataframe map(String columnName, Supplier<T> supplier) {
-    return mapTransform.map(columnName, supplier);
+  @Override
+  public <S1, S2, T> Dataframe transform(String columnName, String columnName2,
+      BiFunction<S1, S2, T> f) {
+    addStep(BiColumnTransformer.class, columnName, columnName2, f);
+    return this;
+  }
+
+  @Override
+  public <T> Dataframe map(String columnName, Supplier<T> f) {
+    addStep(SupplierRowMapper.class, columnName, f);
+    return this;
+  }
+
+  @Override
+  public Dataframe addColumn(Object columnName, List<?> values) {
+    addStep(AddColumnFromList.class, columnName, values);
+    return this;
   }
 
   public <S, T> Dataframe map(String columnName, Function<S, T> f, String sourceColumn) {
-    return mapTransform.map(columnName, f, sourceColumn);
+    addStep(AddColumnMapper.class, columnName, sourceColumn, f);
+    return this;
   }
 
   public <S1, S2, T> Dataframe map(String columnName,
       BiFunction<S1, S2, T> f,
       String sourceColumn1,
       String sourceColumn2) {
-    return mapTransform.map(columnName, f, sourceColumn1, sourceColumn2);
+    addStep(BiAddColumnMapper.class, columnName, sourceColumn1, sourceColumn2, f);
+    return this;
   }
 
   public Dataframe mapWithout(String... columnNames) {
-    return mapTransform.mapWithout(columnNames);
+    Stream.of(columnNames).forEach(col -> addStep(RemoveColumnMapper.class, col));
+    return this;
   }
 
+  public static record Result<T>(List<Object> header,T rows) {
+
+  }
+  @Override
+  public Result<List<Row>> getResult() {
+    var sink = new RowSink();
+    process(sink);
+    final List<Row> result = sink.getResult();
+    final List<Object> header = sink.getHeader();
+    return new Result<>(header, result);
+  }
+
+  @Override
+  public <T> List<T> getColumn(Object columnName) {
+    var sink = new RowSink();
+    process(sink);
+    final List<Row> result = sink.getResult();
+    var header = sink.getHeader();
+    return result.stream().map(row -> {
+      var indexOf = header.indexOf(columnName);
+      return (T) row.get(indexOf);
+    }).collect(toList());
+  }
+
+  @Override
   public Dataframe oneHotEncode(String columnToEncode) {
-    return matrixTransform.oneHotEncode(columnToEncode);
+    addStep(OneHotEncoderMapper.class, columnToEncode);
+    return this;
   }
 
-  public INDArray toVector(String columnName) {
-    return matrixTransform.toVector(columnName);
+  @Override
+  public Dataframe shuffle() {
+    addStep(ShuffleAccumulator.class);
+    return this;
   }
 
-  public INDArray toMatrix(String... columnNames) {
-    return matrixTransform.toMatrix(columnNames);
+  @Override
+  public INDArray toMatrix() {
+    return this.toMatrixResult().rows;
+  }
+
+  @Override
+  public Result<INDArray> toMatrixResult(Map<Object, LabelValueIndexer<?>> objectLabelValueIndexerMap) {
+    var sink = new MatrixSink(objectLabelValueIndexerMap);
+    process(sink);
+    var result = sink.getResult();
+    final List<Object> header = sink.getHeader();
+    return new Result<>(header, result);
+  }
+
+  @Override
+  public Result<INDArray> toMatrixResult() {
+    return toMatrixResult(Map.of());
+  }
+
+  @Override
+  public INDArray toMatrix(Map<Object, LabelValueIndexer<?>> objectLabelValueIndexerMap) {
+    return toMatrixResult(objectLabelValueIndexerMap).rows;
+  }
+
+  @Override
+  public INDArray[] trainTest(double threshold) {
+    var matrix = toMatrix();
+    return privateTrainTest(threshold, matrix);
+  }
+
+  @Override
+  public INDArray[] trainTest(double threshold,
+      Map<Object, LabelValueIndexer<?>> labelValueIndexerMap) {
+    var matrix = toMatrix(labelValueIndexerMap);
+    return privateTrainTest(threshold, matrix);
+  }
+
+  private INDArray[] privateTrainTest(double threshold, INDArray matrix) {
+    int split = (int) (matrix.rows() * threshold);
+    return new INDArray[]{
+        matrix.getRows(range(0, split).toArray()),
+        matrix.getRows(range(split, matrix.rows()).toArray())
+    };
   }
 
   public void show(int number) {
@@ -135,36 +209,55 @@ public class Dataframe implements MapTransform, FilterTransform, MatrixTransform
   }
 
   public void show(int start, int end) {
-    DataframePrinter.create(data).print(max(0, start), min(end, this.rowSize));
+    process(new ConsoleSink(start, end));
   }
 
   public void write(String filename, String separator, String enclosure) {
-    DataframeWriter.write(this, filename, separator, enclosure);
+    process(new FileSink(filename, separator, enclosure, true));
   }
 
-  public void tail() {
-    show(this.rowSize - 10, this.rowSize);
+  void addStep(Class<? extends BaseDataProcessor> clazz, Object... args) {
+    steps.add(new Entry<>(clazz, args));
   }
 
-  public <T> List<T> get(Object column) {
-    return List.copyOf((List<T>) data.get(column));
+  private synchronized void process(SinkDataProcessor<?> sink) {
+    if (steps.size() > 0) {
+      var dataProcessors = new ArrayList<BaseDataProcessor>(steps.size() + 1);
+      BaseDataProcessor previous = null;
+      for (var step : steps) {
+        var dataProcessor = createDataProcessor(step).orElseThrow(
+            () -> new IllegalArgumentException(
+                "Could not create data processor: " + step.key().getSimpleName())
+        );
+        if (previous != null) {
+          previous.setNext(dataProcessor);
+        }
+        dataProcessors.add(dataProcessor);
+        previous = dataProcessor;
+      }
+      previous.setNext(sink);
+      dataProcessors.add(sink);
+      var executor = Executors.newFixedThreadPool(dataProcessors.size());
+      dataProcessors.forEach(dp -> dp.start(executor));
+      executor.shutdown();
+    }
   }
 
-  public int getColumnSize() {
-    return columns.length;
+  private Optional<BaseDataProcessor> createDataProcessor(
+      Entry<Class<? extends BaseDataProcessor>, Object[]> e) {
+    try {
+      var constructor = (Constructor<BaseDataProcessor>) e.key().getConstructors()[0];
+      return Optional.of(constructor.newInstance(e.value()));
+    } catch (InstantiationException | IllegalAccessException | InvocationTargetException exc) {
+      LOG.error("Error creating data processor", exc.getCause());
+      return Optional.empty();
+    }
   }
 
-  public Column<?>[] getColumns() {
-    return columns;
+  public Dataframe copy() {
+    return new Dataframe(new ArrayList<>(steps));
   }
 
-  public int getRowSize() {
-    return rowSize;
-  }
-
-  public Map<?, List<?>> getData() {
-    return data;
-  }
 }
 
 

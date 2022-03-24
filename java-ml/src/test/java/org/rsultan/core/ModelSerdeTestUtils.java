@@ -7,7 +7,7 @@ public class ModelSerdeTestUtils {
 
   public static <T> T serdeTrainable(T trainable) {
     try {
-      String pathFile = UUID.randomUUID() + "gz";
+      String pathFile = UUID.randomUUID() + ".gz";
       Models.write(pathFile, trainable);
       var model = Models.<T>read("./" + pathFile);
       new File(pathFile).delete();

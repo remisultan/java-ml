@@ -3,10 +3,9 @@ package org.rsultan.example;
 import java.io.IOException;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.factory.Nd4j;
-import org.rsultan.core.clustering.ensemble.evaluation.TPRThresholdEvaluator;
-import org.rsultan.core.clustering.ensemble.isolationforest.IsolationForest;
+import org.rsultan.core.ensemble.isolationforest.evaluation.TPRThresholdEvaluator;
+import org.rsultan.core.ensemble.isolationforest.IsolationForest;
 import org.rsultan.dataframe.Dataframes;
-import org.rsultan.dataframe.TrainTestDataframe;
 
 public class IsolationForestExample {
 
@@ -21,14 +20,14 @@ public class IsolationForestExample {
   public static void main(String[] args) throws IOException {
     var df = Dataframes.csv(args[0], ",", "\"", true);
     var testDf = Dataframes.csv(args[1], ",", "\"", true);
-    var trainTestDataframe = Dataframes.trainTest(df.getColumns()).setSplitValue(0.99);
 
     var model = new IsolationForest(200);
-    var evaluator = new TPRThresholdEvaluator("attack", "anomalies")
-            .setDesiredTPR(0.7)
-            .setExternalTestDataframe(testDf)
-            .setLearningRate(0.1);
-    Double threshold = evaluator.evaluate(model, trainTestDataframe);
+    var evaluator = new TPRThresholdEvaluator()
+        .setDesiredTPR(0.7)
+        .setTrainTestThreshold(0.99)
+        .setTestDataframe(testDf)
+        .setLearningRate(0.1);
+    Double threshold = evaluator.evaluate(model, df);
     System.out.println("threshold = " + threshold);
     evaluator.showMetrics();
   }
