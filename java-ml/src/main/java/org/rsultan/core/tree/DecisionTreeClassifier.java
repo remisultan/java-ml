@@ -1,7 +1,7 @@
 package org.rsultan.core.tree;
 
-import static java.util.Arrays.stream;
 import static java.util.Map.Entry.comparingByValue;
+import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
 
 import java.util.Map;
@@ -10,7 +10,6 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.rsultan.core.Trainable;
 import org.rsultan.core.tree.domain.Node;
 import org.rsultan.core.tree.impurity.ImpurityStrategy;
-import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframe;
 
 public class DecisionTreeClassifier extends DecisionTreeLearning implements
@@ -22,11 +21,10 @@ public class DecisionTreeClassifier extends DecisionTreeLearning implements
 
   @Override
   public DecisionTreeClassifier train(Dataframe dataframe) {
-    var dfNoResponse = dataframe.mapWithout(responseVariableName);
-    var dfFeatures =
-        predictorNames.length == 0 ? dfNoResponse : dfNoResponse.select(predictorNames);
-    features = stream(dfFeatures.getColumns()).map(Column::columnName).collect(toList());
-    responses = dataframe.get(responseVariableName).stream().sorted().distinct()
+    var dfNoResponse = dataframe.copy().mapWithout(responseVariableName);
+    var dfFeatures = isNull(predictorNames) || predictorNames.length == 0 ? dfNoResponse.copy()
+        : dfNoResponse.copy().select(predictorNames);
+    responses = dataframe.copy().getColumn(responseVariableName).stream().sorted().distinct()
         .collect(toList());
     train(dfFeatures.toMatrix(), buildY(dataframe));
     return this;
@@ -34,9 +32,11 @@ public class DecisionTreeClassifier extends DecisionTreeLearning implements
 
   @Override
   public Dataframe predict(Dataframe dataframe) {
-    var predictions = new Column<>(predictionColumnName,
-        this.predict(dataframe.getRowSize(), dataframe.select(predictorNames)));
-    return dataframe.addColumn(predictions);
+    var matrixDf = isNull(predictorNames) || predictorNames.length == 0
+        ? getPredictDataframe(dataframe)
+        : dataframe.copy().select(predictorNames);
+    var predictions = this.predict(matrixDf.toMatrix());
+    return dataframe.addColumn(predictionColumnName, predictions);
   }
 
   @Override
@@ -46,7 +46,8 @@ public class DecisionTreeClassifier extends DecisionTreeLearning implements
 
   protected INDArray buildY(Dataframe dataframe) {
     var columnTemp = UUID.randomUUID().toString();
-    return dataframe.map(columnTemp, responses::indexOf, responseVariableName).toMatrix(columnTemp);
+    return dataframe.copy().map(columnTemp, responses::indexOf, responseVariableName)
+        .select(columnTemp).toMatrix();
   }
 
   @Override
@@ -75,7 +76,8 @@ public class DecisionTreeClassifier extends DecisionTreeLearning implements
   }
 
   @Override
-  protected Object getPredictionNodeFeatureName(Node node) {
-    return features.get(node.feature());
+  public DecisionTreeClassifier setShuffle(boolean shuffle) {
+    super.setShuffle(shuffle);
+    return this;
   }
 }

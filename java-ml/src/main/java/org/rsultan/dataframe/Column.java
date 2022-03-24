@@ -7,8 +7,4 @@ import java.io.Serializable;
 import java.util.List;
 
 public record Column<T>(String columnName, List<T> values) implements Serializable {
-
-  public Column(String columnName, T... values) {
-    this(columnName, stream(values).collect(toList()));
-  }
 }

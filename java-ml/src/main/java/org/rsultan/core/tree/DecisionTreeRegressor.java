@@ -1,13 +1,11 @@
 package org.rsultan.core.tree;
 
-import static java.util.Arrays.stream;
-import static java.util.stream.Collectors.toList;
+import static java.util.Objects.isNull;
 import static org.rsultan.core.tree.impurity.ImpurityStrategy.RMSE;
 
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.rsultan.core.Trainable;
 import org.rsultan.core.tree.domain.Node;
-import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframe;
 
 public class DecisionTreeRegressor extends DecisionTreeLearning implements
@@ -19,19 +17,21 @@ public class DecisionTreeRegressor extends DecisionTreeLearning implements
 
   @Override
   public DecisionTreeRegressor train(Dataframe dataframe) {
-    var dfNoResponse = dataframe.mapWithout(responseVariableName);
-    var dfFeatures = dfNoResponse.select(predictorNames);
-    features = stream(dfFeatures.getColumns()).map(Column::columnName).collect(toList());
-    responses = dataframe.get(responseVariableName);
-    train(dfFeatures.toMatrix(), dataframe.toMatrix(responseVariableName));
+    final Dataframe dfResponse = dataframe.copy().select(responseVariableName);
+    var dfNoResponse = dataframe.copy().mapWithout(responseVariableName);
+    var dfFeatures = isNull(predictorNames) || predictorNames.length == 0 ? dfNoResponse.copy()
+        : dfNoResponse.copy().select(predictorNames);
+    responses = dfResponse.getColumn(responseVariableName);
+    train(dfFeatures.toMatrix(), dfResponse.toMatrix());
     return this;
   }
 
   @Override
   public Dataframe predict(Dataframe dataframe) {
-    var predictions = new Column<>(predictionColumnName,
-        this.predict(dataframe.getRowSize(), dataframe.select(predictorNames)));
-    return dataframe.addColumn(predictions);
+    var predictions = super.predict(isNull(predictorNames) || predictorNames.length == 0 ?
+        getPredictDataframe(dataframe).toMatrix() :
+        dataframe.copy().select(predictorNames).toMatrix());
+    return dataframe.addColumn(predictionColumnName, predictions);
   }
 
   @Override
@@ -53,6 +53,12 @@ public class DecisionTreeRegressor extends DecisionTreeLearning implements
   }
 
   @Override
+  public DecisionTreeRegressor setShuffle(boolean shuffle) {
+    super.setShuffle(shuffle);
+    return this;
+  }
+
+  @Override
   protected Double computePredictedResponse(INDArray array) {
     return array.mean().getDouble(0, 0);
   }
@@ -62,8 +68,4 @@ public class DecisionTreeRegressor extends DecisionTreeLearning implements
     return node.predictedResponse().doubleValue();
   }
 
-  @Override
-  protected Object getPredictionNodeFeatureName(Node node) {
-    return features.get(node.feature());
-  }
 }

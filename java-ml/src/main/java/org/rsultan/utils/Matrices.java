@@ -23,7 +23,7 @@ public class Matrices {
           .toArray();
       return Nd4j.create(diagonal, m.rows(), 1);
     }
-    throw new IllegalArgumentException("Matrix is not a square leafNode, shape: " + Arrays
+    throw new IllegalArgumentException("Matrix is not square, shape: " + Arrays
         .toString(m.shape()));
   }
 

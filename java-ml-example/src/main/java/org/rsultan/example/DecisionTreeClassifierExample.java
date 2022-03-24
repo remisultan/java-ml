@@ -38,16 +38,15 @@ public class DecisionTreeClassifierExample {
     File file = new File(TEMP_DIR + File.separator + "dtRegressor.gz");
     var pathName = file.toPath();
     DecisionTreeRegressor decisionTreeRegression;
-    var dataframe = Dataframes.csvTrainTest(arg, ";").shuffle();
-    var dfSplit = dataframe.setSplitValue(0.5).split();
+    var dataframe = Dataframes.csv(arg, ";");
     if (!file.exists()) {
       decisionTreeRegression = new DecisionTreeRegressor(5)
           .setResponseVariableName("alcohol")
-          .train(dfSplit.train());
+          .train(dataframe);
     } else {
       decisionTreeRegression = Models.read(pathName);
     }
-    var newDf = decisionTreeRegression.predict(dfSplit.test());
+    var newDf = decisionTreeRegression.predict(dataframe);
     newDf.show(0, 15000);
   }
 
@@ -55,16 +54,15 @@ public class DecisionTreeClassifierExample {
     File file = new File(TEMP_DIR + File.separator + "dtClassifier.gz");
     var pathName = file.toPath();
     DecisionTreeClassifier decisionTreeClassifier;
-    var dataframe = Dataframes.csvTrainTest(arg, ",", "\"", false).shuffle();
-    var dfSplit = dataframe.setSplitValue(0.4).split();
+    var dataframe = Dataframes.csv(arg, ",", "\"", false);
     if (!file.exists()) {
       decisionTreeClassifier = new DecisionTreeClassifier(5, GINI);
-      decisionTreeClassifier.setResponseVariableName("c4").train(dfSplit.train());
+      decisionTreeClassifier.setResponseVariableName("c4").train(dataframe);
       Models.write(pathName, decisionTreeClassifier);
     } else {
       decisionTreeClassifier = Models.read(pathName);
     }
-    var newDf = decisionTreeClassifier.predict(dfSplit.test());
+    var newDf = decisionTreeClassifier.predict(dataframe);
     newDf.show(0, 150);
   }
 }

@@ -38,39 +38,37 @@ public class RandomForestExample {
     File file = new File(TEMP_DIR + File.separator + "rfRegressor.gz");
     String pathName = file.toPath().toString();
     RandomForestRegressor randomForestRegression;
-    var dataframe = Dataframes.csvTrainTest(arg, ";").shuffle();
-    var dfSplit = dataframe.setSplitValue(0.5).split();
+    var dataframe = Dataframes.csv(arg, ";").shuffle();
     if (!file.exists()) {
       randomForestRegression = new RandomForestRegressor(10)
           .setTreeDepth(5)
           .setSampleSizeRatio(0.4)
           .setResponseVariableName("quality")
-          .train(dfSplit.train());
+          .train(dataframe);
       Models.write(pathName, randomForestRegression);
     } else {
       randomForestRegression = Models.read(pathName);
     }
-    var newDf = randomForestRegression.predict(dfSplit.test());
+    var newDf = randomForestRegression.predict(dataframe);
     newDf.show(0, 15000);
   }
 
   private static void classifier(String arg) throws IOException, ClassNotFoundException {
     File file = new File(TEMP_DIR + File.separator + "rfClassifier.gz");
     RandomForestClassifier randomForestClassifier;
-    var dataframe = Dataframes.csvTrainTest(arg, ",", "\"", false).shuffle();
-    var dfSplit = dataframe.setSplitValue(0.4).split();
+    var dataframe = Dataframes.csv(arg, ",", "\"", false).shuffle();
     if (!file.exists()) {
       randomForestClassifier = new RandomForestClassifier(100, ENTROPY)
           .setTreeDepth(5)
           .setSampleSizeRatio(0.4)
           .setResponseVariableName("c4")
-          .train(dfSplit.train());
+          .train(dataframe);
       Models.write(file.toPath(), randomForestClassifier);
     } else {
       randomForestClassifier = Models.read(file.toPath());
     }
 
-    var newDf = randomForestClassifier.predict(dfSplit.test());
+    var newDf = randomForestClassifier.predict(dataframe);
     newDf.show(0, 150);
   }
 }

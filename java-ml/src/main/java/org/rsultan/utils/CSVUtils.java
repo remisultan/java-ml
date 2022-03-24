@@ -27,9 +27,9 @@ public class CSVUtils {
   public static final String COLUMN_VALUE_GROUP_NAME = "columnValue";
   public static final String TRIM_ENCLOSURE_PATTERN =
       "^%s*(?<" + COLUMN_VALUE_GROUP_NAME + ">[^%s]+.+[^%s]+|[^%s]{0,2})%s*$";
-  private static final Pattern DOUBLE_VALUE_REGEX = compile("-?\\d+\\.\\d+");
-  private static final Pattern LONG_VALUE_REGEX = compile("-?\\d+");
-  private static final String HEADER_PREFIX = "c";
+  public static final Pattern DOUBLE_VALUE_REGEX = compile("-?\\d+\\.\\d+");
+  public static final Pattern LONG_VALUE_REGEX = compile("-?\\d+");
+  public static final String HEADER_PREFIX = "c";
 
   private static Object getValueWithType(String value) {
     if (DOUBLE_VALUE_REGEX.matcher(value).matches()) {

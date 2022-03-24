@@ -13,6 +13,7 @@ import org.rsultan.core.regression.GradientDescentRegression;
 import org.rsultan.core.regularization.Regularization;
 import org.rsultan.dataframe.Column;
 import org.rsultan.dataframe.Dataframe;
+import org.rsultan.dataframe.engine.label.LabelValueIndexer;
 
 public class LogisticRegression extends GradientDescentRegression {
 
@@ -69,6 +70,12 @@ public class LogisticRegression extends GradientDescentRegression {
   }
 
   @Override
+  public LogisticRegression setShuffle(boolean shuffle) {
+    super.setShuffle(shuffle);
+    return this;
+  }
+
+  @Override
   public INDArray computeNullHypothesis(INDArray X, INDArray W) {
     return computeSigmoid(X.mmul(W));
   }
@@ -90,10 +97,46 @@ public class LogisticRegression extends GradientDescentRegression {
     return h0.add(h1).mean().getDouble(0, 0);
   }
 
+  protected Function<String, String> formatPredictedLabel() {
+    return label -> label.equals(YES) ? this.chosenLabel : "Not " + this.chosenLabel;
+  }
+
+  @Override
+  public LogisticRegression train(Dataframe dataframe) {
+    var df = dataframe.copy().map(INTERCEPT, () -> 1);
+    X = df.copy().select(predictorNames).toMatrix();
+    XMean = X.mean(true, 1);
+    X = X.div(XMean);
+    Xt = X.transpose();
+
+    final Dataframe choseLabelDf = df.copy()
+        .map(this.chosenLabel, obj -> obj.equals(chosenLabel) ? YES : NO, responseVariableName);
+
+    labels = choseLabelDf.copy()
+        .getColumn(this.chosenLabel).stream()
+        .sorted().distinct()
+        .map(Object::toString).collect(toList());
+
+    YoneHot = choseLabelDf.copy()
+        .oneHotEncode(this.chosenLabel)
+        .select(NO, YES).toMatrix();
+
+    shuffle(X, YoneHot);
+
+    Y = YoneHot.argMax(1).castTo(DataType.DOUBLE);
+
+    W = Nd4j.ones(X.columns(), YoneHot.columns());
+
+    YMatrix = Nd4j.create(Y.toDoubleVector(), Y.columns(), 1);
+
+    this.run();
+    return this;
+  }
+
   @Override
   public Dataframe predict(Dataframe dataframe) {
-    var dataframeIntercept = dataframe.map(INTERCEPT, () -> 1);
-    var X = dataframeIntercept.toMatrix(predictorNames);
+    var dataframeIntercept = dataframe.copy().map(INTERCEPT, () -> 1).select(predictorNames);
+    var X = dataframeIntercept.toMatrix();
     var predictions = computeNullHypothesis(X, W);
     var predictionList = range(0, predictions.rows()).boxed()
         .map(predictions::getRow)
@@ -101,34 +144,6 @@ public class LogisticRegression extends GradientDescentRegression {
         .map(labels::get)
         .map(this.formatPredictedLabel())
         .collect(toList());
-    var columns = new Column<>(predictionColumnName, predictionList);
-    return dataframe.addColumn(columns);
-  }
-
-  protected Function<String, String> formatPredictedLabel() {
-    return label -> label.equals(YES) ? this.chosenLabel : "Not " + this.chosenLabel;
-  }
-
-  @Override
-  public LogisticRegression train(Dataframe dataframe) {
-    var df = dataframe
-        .map(INTERCEPT, () -> 1)
-        .map(this.chosenLabel, obj -> obj.toString().equals(this.chosenLabel) ? YES : NO, responseVariableName);
-
-    X = df.toMatrix(predictorNames);
-    XMean = X.mean(true, 1);
-    X = X.div(XMean);
-    Xt = X.transpose();
-
-    labels = df.get(this.chosenLabel).stream().sorted().distinct().map(Object::toString).collect(toList());
-
-    YoneHot = df.oneHotEncode(this.chosenLabel).select(NO, YES).toMatrix();
-    Y = YoneHot.argMax(1).castTo(DataType.DOUBLE);
-    W = Nd4j.ones(X.columns(), YoneHot.columns());
-
-    YMatrix = Nd4j.create(Y.toDoubleVector(), Y.columns(), 1);
-
-    this.run();
-    return this;
+    return dataframe.copy().addColumn(predictionColumnName, predictionList);
   }
 }

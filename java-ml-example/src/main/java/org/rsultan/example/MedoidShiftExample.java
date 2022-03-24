@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import javax.imageio.ImageIO;
@@ -18,7 +19,6 @@ public class MedoidShiftExample {
 
   /*
    Make sure args[0] /path/to/your/image.(jpg|png)
-   Make sure args[1] /output/directory/path/
   */
   static {
     Nd4j.setDefaultDataTypes(DataType.DOUBLE, DataType.DOUBLE);
@@ -29,21 +29,21 @@ public class MedoidShiftExample {
 
     var img = ImageIO.read(new File(args[0]));
 
-    var red = new Column<Integer>("r", new ArrayList<>());
-    var green = new Column<Integer>("g", new ArrayList<>());
-    var blue = new Column<Integer>("b", new ArrayList<>());
-
+    List<List<?>> list = new ArrayList<>();
     for (int y = 0; y < img.getHeight(); y++) {
       for (int x = 0; x < img.getWidth(); x++) {
         int pixel = img.getRGB(x, y);
         var color = new Color(pixel, true);
-        red.values().add(color.getRed());
-        green.values().add(color.getGreen());
-        blue.values().add(color.getBlue());
+        list.add(List.of(
+            color.getRed(),
+            color.getGreen(),
+            color.getBlue()
+        ));
       }
     }
 
-    var df = Dataframes.create(red, green, blue);
+    String[] columns = {"r", "g", "b"};
+    var df = Dataframes.create(columns, list);
 
     System.out.println("Dataframe loaded");
 

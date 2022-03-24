@@ -93,8 +93,9 @@ public abstract class KMedoids implements Clustering {
     var Xpredict = dataframe.toMatrix();
     var distances = medoidFactory.computeDistance(centroids, Xpredict).transpose();
     var centers = LongStream.of(Nd4j.argMin(distances, 1).toLongVector()).boxed().collect(toList());
-    return dataframe.addColumn(new Column<>("K", centers))
-        .<Long, INDArray>map("prediction", centroids::getRow, "K");
+    return dataframe
+        .addColumn("prediction", centers)
+        .transform("prediction", (Long center) -> centroids.getRow(center));
   }
 
   private INDArray buildInitialCentroids(MedoidFactory medoidFactory) {
@@ -106,7 +107,7 @@ public abstract class KMedoids implements Clustering {
         .map(idx -> Arrays.toString(this.centroids.getRow(idx).toDoubleVector()))
         .collect(toList());
     var indices = new Column<>("K", rangeClosed(1, K).boxed().collect(toList()));
-    Dataframes.create(indices, new Column<>("centroids", centroids)).tail();
+    //Dataframes.create(indices, new Column<>("centroids", centroids)).tail();
   }
 
   public INDArray getCentroids() {

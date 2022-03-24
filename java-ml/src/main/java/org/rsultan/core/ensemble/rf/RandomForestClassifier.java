@@ -70,8 +70,14 @@ public class RandomForestClassifier extends RandomForestLearning {
   }
 
   @Override
+  public RandomForestClassifier setShuffle(boolean shuffle) {
+    super.setShuffle(shuffle);
+    return this;
+  }
+
+  @Override
   protected List<?> getResponseValues(Dataframe dataframe) {
-    return dataframe.get(responseVariableName).stream().sorted().distinct().collect(toList());
+    return dataframe.getColumn(responseVariableName).stream().sorted().distinct().collect(toList());
   }
 
   @Override
@@ -80,14 +86,13 @@ public class RandomForestClassifier extends RandomForestLearning {
       responses = getResponseValues(dataframe);
     }
     var columnTemp = UUID.randomUUID().toString();
-    return dataframe.map(columnTemp, responses::indexOf, responseVariableName)
-        .toMatrix(columnTemp);
+    return dataframe.map(columnTemp, responses::indexOf, responseVariableName).select(columnTemp)
+        .toMatrix();
   }
 
   @Override
   protected DecisionTreeLearning buildDecisionTreeLearning() {
-    return new RandomForestClassifierTree(treeDepth, impurityStrategy, this.features,
-        this.responses)
+    return new DecisionTreeClassifier(treeDepth, impurityStrategy)
         .setResponseVariableName(responseVariableName)
         .setPredictionColumnName(predictionColumnName);
   }
@@ -110,30 +115,12 @@ public class RandomForestClassifier extends RandomForestLearning {
         .map(responses::get).collect(toList());
   }
 
-  private static class RandomForestClassifierTree extends DecisionTreeClassifier {
-
-    private final List<?> parentFeatureNames;
-
-    public RandomForestClassifierTree(
-        int depth,
-        ImpurityStrategy strategy,
-        List<?> parentFeatureNames,
-        List<?> responses
-
-    ) {
-      super(depth, strategy);
-      this.parentFeatureNames = parentFeatureNames;
-      this.responses = responses;
-    }
-
-    @Override
-    protected Object getPredictionNodeFeatureName(Node node) {
-      return parentFeatureNames.get((int) features.get(node.feature()));
-    }
-
-    @Override
-    protected Object getNodePrediction(Node node) {
-      return node.predictedResponse().intValue();
-    }
+  @Override
+  protected List<INDArray> getTreePredictions(INDArray predictionMatrix) {
+    return this.trees.parallelStream()
+        .map(tree -> tree.setResponses(responses).predict(predictionMatrix))
+        .map(result -> result.stream().map(responses::indexOf).collect(toList()))
+        .map(Nd4j::create)
+        .collect(toList());
   }
 }

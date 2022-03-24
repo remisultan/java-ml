@@ -100,7 +100,8 @@ public class KMedoidExample {
         blue.values().add(color.getBlue());
       }
     }
-    return Dataframes.create(red, green, blue);
+   // return Dataframes.create(red, green, blue);
+    return null;
   }
 
   private static BufferedImage resizeImage(BufferedImage originalImage, int targetWidth,

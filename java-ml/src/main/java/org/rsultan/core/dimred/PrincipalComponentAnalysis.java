@@ -4,8 +4,10 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 import static org.nd4j.common.util.ArrayUtil.argsort;
 import static org.nd4j.linalg.eigen.Eigen.symmetricGeneralizedEigenvalues;
+import static org.nd4j.linalg.ops.transforms.Transforms.normalizeZeroMeanAndUnitVariance;
 
 import java.util.List;
+import java.util.stream.Stream;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.rsultan.core.RawTrainable;
 import org.rsultan.core.Trainable;
@@ -34,23 +36,23 @@ public class PrincipalComponentAnalysis implements
 
   @Override
   public PrincipalComponentAnalysis train(Dataframe dataframe) {
-    var X = dataframe.mapWithout(responseVariable).toMatrix();
-    this.responseVariableData = dataframe.get(responseVariable);
+    var X = normalizeZeroMeanAndUnitVariance(dataframe.copy().mapWithout(responseVariable).toMatrix());
+    this.responseVariableData = dataframe.getColumn(responseVariable);
     return this.train(X);
   }
 
   @Override
   public Dataframe predict(Dataframe dataframe) {
-    var Xpredict = dataframe.mapWithout(responseVariable).toMatrix();
+    var Xpredict = dataframe.copy().mapWithout(responseVariable).toMatrix();
     LOG.info("computing predictions");
     this.predict(Xpredict);
-    List<Column<?>> columns = range(0, predictions.columns())
-        .mapToObj(colIdx -> new Column<>("c" + colIdx, range(0, predictions.rows())
-            .mapToObj(rowIdx -> predictions.getDouble(rowIdx, colIdx))
-            .collect(toList()))
-        ).collect(toList());
-    columns.add(new Column<>(responseVariable, responseVariableData));
-    return Dataframes.create(columns.toArray(Column[]::new));
+    var columns = range(0, predictions.columns()).mapToObj(colIdx -> "c" + colIdx)
+        .toArray(String[]::new);
+    List<List<?>> rows = range(0, predictions.rows()).mapToObj(rowId -> range(0, predictions.columns())
+        .mapToObj(colIdx -> predictions.getDouble(rowId, colIdx))
+        .collect(toList())).collect(toList());
+
+    return Dataframes.create(columns, rows).addColumn(responseVariable, responseVariableData);
   }
 
   @Override
@@ -74,13 +76,13 @@ public class PrincipalComponentAnalysis implements
   public Dataframe reconstruct() {
     LOG.info("trying to reconstruct original matrix");
     var XreBuilt = rawReconstruct();
-    List<Column<?>> columns = range(0, XreBuilt.columns())
-        .mapToObj(colIdx -> new Column<>("c" + colIdx, range(0, XreBuilt.rows())
-            .mapToObj(rowIdx -> XreBuilt.getDouble(rowIdx, colIdx))
-            .collect(toList()))
-        ).collect(toList());
-    columns.add(new Column<>(responseVariable, responseVariableData));
-    return Dataframes.create(columns.toArray(Column[]::new));
+    var columns = range(0, XreBuilt.columns()).mapToObj(colIdx -> "c" + colIdx)
+        .toArray(String[]::new);
+    List<List<?>> rows = range(0, XreBuilt.rows()).mapToObj(rowIdx -> range(0, XreBuilt.columns())
+        .mapToObj(colIdx -> XreBuilt.getDouble(rowIdx, colIdx))
+        .collect(toList())).collect(toList());
+
+    return Dataframes.create(columns, rows).addColumn(responseVariable, responseVariableData);
   }
 
   public INDArray rawReconstruct() {

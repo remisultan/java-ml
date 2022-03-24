@@ -5,6 +5,7 @@ import static java.util.stream.IntStream.rangeClosed;
 import static org.rsultan.core.clustering.type.MedoidType.MEAN;
 
 import java.util.ArrayList;
+import java.util.List;
 import org.rsultan.core.clustering.kmedoids.KMeans;
 import org.rsultan.core.clustering.kmedoids.KMedians;
 import org.rsultan.core.clustering.type.MedoidType;
@@ -20,6 +21,7 @@ public class KMedoidEvaluator {
   private final int maxK;
   private final MedoidType medoidType;
   private final int epoch;
+  private final List<Integer> clusters;
 
   public KMedoidEvaluator(int minK, int maxK, MedoidType medoidType) {
     this(minK, maxK, medoidType, 100);
@@ -30,21 +32,22 @@ public class KMedoidEvaluator {
     this.maxK = maxK;
     this.medoidType = medoidType;
     this.epoch = epoch;
+    clusters = rangeClosed(minK, maxK).boxed().collect(toList());
   }
 
   public Dataframe evaluate(Dataframe dataframe) {
-    var clusters = new Column<>(K, rangeClosed(minK, maxK).boxed().collect(toList()));
-    var sumOfSquares = new Column<>(SUM_OF_SQUARES, new ArrayList<>(clusters.values().size()));
-    rangeClosed(minK, maxK).parallel().mapToObj(k -> switch (medoidType) {
-          case MEDIAN -> new KMedians(k, epoch);
-          case MEAN -> new KMeans(k, epoch);
-        }
-    ).map(kMedoids -> kMedoids.train(dataframe))
+    var values = new ArrayList<List<?>>(clusters.size());
+    rangeClosed(minK, maxK).parallel()
+        .mapToObj(k -> switch (medoidType) {
+              case MEDIAN -> new KMedians(k, epoch);
+              case MEAN -> new KMeans(k, epoch);
+            }
+        ).map(kMedoids -> kMedoids.train(dataframe.copy()))
         .forEachOrdered(kMedoids -> {
-          var indexOfK = clusters.values().indexOf(kMedoids.getK());
-          sumOfSquares.values().add(indexOfK, kMedoids.getWCSS());
+          var indexOfK = clusters.indexOf(kMedoids.getK());
+          values.add(indexOfK, List.of(kMedoids.getK(), kMedoids.getWCSS()));
         });
-    return Dataframes.create(clusters, sumOfSquares);
+    return Dataframes.create(new String[]{K, SUM_OF_SQUARES}, values);
   }
 
   @Override

@@ -9,6 +9,7 @@ import static org.rsultan.core.regularization.Regularization.RIDGE;
 import static org.rsultan.utils.TestUtils.getResourceFileName;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -64,13 +65,14 @@ public class LogisticRegressionTest {
         .setRegularization(regularization)
         .setLambda(0.1)
         .setPredictionColumnName("predictions")
-        .setChosenLabel(label);
+        .setChosenLabel(label)
+        .setShuffle(true);
     logisticRegression.setLossAccuracyOffset(10);
     logisticRegression.train(dataframe);
-    logisticRegression.getHistory().tail();
+    logisticRegression.getHistory().show(10);
 
     var dfPredict = logisticRegression.predict(dataframe);
-    assertThat(dfPredict.<String>get("predictions").stream().toArray())
+    assertThat(dfPredict.<String>getColumn("predictions").stream().toArray())
         .containsExactly(expectedPredictions);
   }
 
@@ -93,10 +95,10 @@ public class LogisticRegressionTest {
         .setChosenLabel(label);
     logisticRegression.setLossAccuracyOffset(10);
     logisticRegression = serdeTrainable(logisticRegression.train(dataframe));
-    logisticRegression.getHistory().tail();
+    logisticRegression.getHistory().show(10);
 
     var dfPredict = logisticRegression.predict(dataframe);
-    assertThat(dfPredict.<String>get("predictions").stream().toArray())
+    assertThat(dfPredict.<String>getColumn("predictions").stream().toArray())
         .containsExactly(expectedPredictions);
   }
 }
