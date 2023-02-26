@@ -18,6 +18,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.ops.transforms.Transforms;
 import org.rsultan.dataframe.engine.BaseDataProcessor;
 import org.rsultan.dataframe.engine.filter.RowBiPredicate;
 import org.rsultan.dataframe.engine.filter.RowPredicate;
@@ -32,6 +33,9 @@ import org.rsultan.dataframe.engine.mapper.impl.RemoveColumnMapper;
 import org.rsultan.dataframe.engine.mapper.impl.SelectColumnMapper;
 import org.rsultan.dataframe.engine.mapper.impl.ShuffleAccumulator;
 import org.rsultan.dataframe.engine.mapper.impl.SupplierRowMapper;
+import org.rsultan.dataframe.engine.mapper.impl.group.Aggregation;
+import org.rsultan.dataframe.engine.mapper.impl.group.AggregationType;
+import org.rsultan.dataframe.engine.mapper.impl.group.GroupByTransformer;
 import org.rsultan.dataframe.engine.sink.SinkDataProcessor;
 import org.rsultan.dataframe.engine.sink.impl.ConsoleSink;
 import org.rsultan.dataframe.engine.sink.impl.FileSink;
@@ -50,6 +54,7 @@ public class Dataframe implements MapTransform, FilterTransform, MatrixTransform
   private static final Logger LOG = LoggerFactory.getLogger(Dataframe.class);
 
   private static record Entry<K, V>(K key, V value) implements Serializable {
+
   }
 
   private final List<Entry<Class<? extends BaseDataProcessor>, Object[]>> steps;
@@ -123,9 +128,10 @@ public class Dataframe implements MapTransform, FilterTransform, MatrixTransform
     return this;
   }
 
-  public static record Result<T>(List<Object> header,T rows) {
+  public static record Result<T>(List<Object> header, T rows) {
 
   }
+
   @Override
   public Result<List<Row>> getResult() {
     var sink = new RowSink();
@@ -165,7 +171,8 @@ public class Dataframe implements MapTransform, FilterTransform, MatrixTransform
   }
 
   @Override
-  public Result<INDArray> toMatrixResult(Map<Object, LabelValueIndexer<?>> objectLabelValueIndexerMap) {
+  public Result<INDArray> toMatrixResult(
+      Map<Object, LabelValueIndexer<?>> objectLabelValueIndexerMap) {
     var sink = new MatrixSink(objectLabelValueIndexerMap);
     process(sink);
     var result = sink.getResult();
@@ -218,6 +225,15 @@ public class Dataframe implements MapTransform, FilterTransform, MatrixTransform
 
   void addStep(Class<? extends BaseDataProcessor> clazz, Object... args) {
     steps.add(new Entry<>(clazz, args));
+  }
+
+  public Dataframe groupBy(String source, String target, AggregationType aggregationType) {
+    return this.groupBy(source, new Aggregation(target, aggregationType));
+  }
+
+  public Dataframe groupBy(String source, Aggregation... aggregations) {
+    addStep(GroupByTransformer.class, source, aggregations);
+    return this;
   }
 
   private synchronized void process(SinkDataProcessor<?> sink) {

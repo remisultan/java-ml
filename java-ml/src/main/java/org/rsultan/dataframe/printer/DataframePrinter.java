@@ -7,14 +7,21 @@ import static java.util.stream.Collectors.toMap;
 import static java.util.stream.IntStream.range;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class DataframePrinter {
 
+  private static final Lock lock = new ReentrantLock();
+
   public static final String COLUMN_DELIMITER = " ║ ";
   public static final String ROW_LINE_DELIMITER = "=";
+  private static final int MAX_DISPLAYABLE_LIST_VAL_CHARS = 10;
 
   private final Map<?, List<?>> data;
   private final Map<String, Integer> mapMaxSizes;
@@ -47,7 +54,7 @@ public class DataframePrinter {
   private List<List<String>> buildRows(int start, int end) {
     return range(0, end - start).boxed().map(num ->
         data.entrySet().stream()
-            .map(entry -> Map.entry(valueOf(entry.getKey()), valueOf(entry.getValue().get(num))))
+            .map(entry -> Map.entry(valueOf(entry.getKey()), getStringValue(num, entry)))
             .map(entry -> {
               int newLength = entry.getValue().length();
               mapMaxSizes.computeIfPresent(
@@ -58,15 +65,32 @@ public class DataframePrinter {
     ).collect(toList());
   }
 
+  private String getStringValue(Integer num, Entry<?, List<?>> entry) {
+    final Object value = entry.getValue().get(num);
+    if(value instanceof Collection<?> c && c.size() > MAX_DISPLAYABLE_LIST_VAL_CHARS){
+      return valueOf(c.stream().limit(10).collect(toList()))
+          .replaceAll("]", ", ...]");
+    }
+    return valueOf(value);
+  }
+
   private void printRows(List<List<String>> rows, String columnsString, String dashRow) {
-    System.out.println(dashRow);
-    System.out.println(columnsString);
-    System.out.println(dashRow);
-    rows.stream().map(this::computeStringRowWith)
-        .forEach(strRow -> {
-          System.out.println(strRow);
-          System.out.println(dashRow);
-        });
+    lock.lock();
+    try {
+      System.out.println(dashRow);
+      System.out.println(columnsString);
+      System.out.println(dashRow);
+      rows.stream().map(this::computeStringRowWith)
+          .forEach(strRow -> {
+            System.out.println(strRow);
+            System.out.println(dashRow);
+          });
+    } catch (Exception e) {
+      e.printStackTrace();
+    } finally {
+      lock.unlock();
+    }
+
   }
 
   private String computeStringRowWith(List<String> row) {
