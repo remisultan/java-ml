@@ -20,6 +20,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.factory.Nd4j;
 import org.rsultan.dataframe.engine.label.LabelValueIndexer;
+import org.rsultan.dataframe.engine.mapper.impl.group.Aggregation;
+import org.rsultan.dataframe.engine.mapper.impl.group.AggregationType;
 
 public class DataframeTest {
 
@@ -405,5 +407,26 @@ public class DataframeTest {
     assertThat(df.getColumn("x2")).containsExactly(1L, 4L, 9L, 16L, 25L, -25L);
     assertThat(df.getColumn("x3")).containsExactly(1L, 8L, 27L, 64L, 125L, -125L);
     assertThat(df.getColumn("strColumn")).containsExactly("a", "b", "c", "d", "e", "f");
+  }
+
+  @Test
+  public void must_group_by() throws IOException {
+    var df = Dataframes.csv(getResourceFileName("org/rsultan/utils/example-classif.csv"))
+        .groupBy("strColumn",
+            new Aggregation("y", AggregationType.SUM),
+            new Aggregation("y", AggregationType.AVG),
+            new Aggregation("y", AggregationType.COUNT),
+            new Aggregation("y", AggregationType.MAX),
+            new Aggregation("y", AggregationType.MIN),
+            new Aggregation("y", AggregationType.ACCUMULATE));
+    df.getResult();
+    df.show(10);
+    assertThat(df.getColumn("sum(y)")).containsExactly(3.0, 7.0, 5.0);
+    assertThat(df.getColumn("avg(y)")).containsExactly(1.5, 3.5, 5.0);
+    assertThat(df.getColumn("count(y)")).containsExactly(2L, 2L, 1L);
+    assertThat(df.getColumn("max(y)")).containsExactly(2.0D, 4.0D, 5.0D);
+    assertThat(df.getColumn("min(y)")).containsExactly(1.0D, 3.0D, 5.0D);
+    assertThat(df.getColumn("accumulate(y)")).containsExactly(
+        List.of(1L, 2L), List.of(3L, 4L), List.of(5L));
   }
 }

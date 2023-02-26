@@ -12,12 +12,16 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 
 public abstract class ModelParameters<T> implements Serializable {
 
-  private static final SecureRandom RND = new SecureRandom();
+  private final SecureRandom RND = new SecureRandom();
   protected String responseVariableName = "y";
   protected String predictionColumnName = "predictions";
   protected String[] predictorNames = {};
 
   protected boolean shuffle = false;
+
+  public ModelParameters() {
+    RND.setSeed(RND.generateSeed(Math.abs(RND.nextInt(10))));
+  }
 
   public T setResponseVariableName(String responseVariableName) {
     this.responseVariableName = responseVariableName;
@@ -43,7 +47,7 @@ public abstract class ModelParameters<T> implements Serializable {
     if (shuffle && ndArrays != null && ndArrays.length > 0) {
       var indices = range(0, ndArrays[0].rows()).boxed().collect(toList());
       final int[] rows = indices.stream().mapToInt(i -> i).toArray();
-      Collections.shuffle(indices);
+      Collections.shuffle(indices, RND);
       for (INDArray indArray : ndArrays) {
         final INDArray rows1 = indArray.getRows(rows);
         indArray.muli(0).addi(rows1);

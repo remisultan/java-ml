@@ -14,7 +14,6 @@ import org.rsultan.dataframe.engine.queue.QueueFactory;
 public abstract class AccumulatorDataProcessor extends BaseDataProcessor implements
     Mapper<Row, Row> {
 
-  protected List<Row> accumulator;
   private final AtomicBoolean canAccumulate = new AtomicBoolean();
 
   protected AccumulatorDataProcessor() {
@@ -23,29 +22,32 @@ public abstract class AccumulatorDataProcessor extends BaseDataProcessor impleme
 
   @Override
   public void run() {
+    try {
       while (canAccumulate.get()) {
-      final Queue<Row> queue = QueueFactory.get(queueId);
+        final Queue<Row> queue = QueueFactory.get(queueId);
         if (!queue.isEmpty()) {
           final Row row = queue.poll();
           if (NULL_ROW.equals(row)) {
             canAccumulate.set(false);
           } else {
-            accumulator.add(row);
+            accumulate(row);
           }
         }
       }
       feedFromAccumulator();
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
     this.stop();
   }
 
-  protected void feedFromAccumulator() {
-    this.accumulator.stream().map(this::map).forEach(this::feed);
-  }
+  protected abstract void accumulate(Row row);
+
+  protected abstract void feedFromAccumulator();
 
   @Override
   public void start(ExecutorService executorService) {
     canAccumulate.set(true);
-    accumulator = new ArrayList<>();
     super.start(executorService);
   }
 
