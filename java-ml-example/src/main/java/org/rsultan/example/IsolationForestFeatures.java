@@ -3,11 +3,10 @@ package org.rsultan.example;
 import java.io.IOException;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.factory.Nd4j;
-import org.rsultan.core.evaluation.AreaUnderCurve;
 import org.rsultan.core.ensemble.isolationforest.IsolationForest;
 import org.rsultan.dataframe.Dataframes;
 
-public class IsolationForestExample {
+public class IsolationForestFeatures {
 
   /*
     You can use the http dataset --> args[0]
@@ -19,14 +18,15 @@ public class IsolationForestExample {
 
   public static void main(String[] args) throws IOException {
     var df = Dataframes.csv(args[0], ",", "\"", true);
-    var testDf = Dataframes.csv(args[1], ",", "\"", true);
 
-    var model = new IsolationForest(200).setUseAnomalyScoresOnly(true);
-    var evaluator = new AreaUnderCurve<IsolationForest>()
-        .setTrainTestThreshold(0.75)
-        .setTestDataframe(testDf)
-        .setLearningRate(0.01);
-    evaluator.evaluate(model, df);
-    System.out.println(evaluator.getAUC());
+    var model = new IsolationForest(200)
+        .setSampleSize(4096)
+        .setUseAnomalyScoresOnly(true);
+
+    model.train(df.copy().mapWithout("malicious_ip").shuffle())
+        .predict(df.copy().mapWithout("malicious_ip"))
+        .transform("anomalies", (Double score) ->  1.0D - score)
+        .addColumn("malicious_ip", df.copy().select("malicious_ip").getResult().rows().stream().map(row -> row.values().get(0)).toList())
+        .write("target/anomaly_scores.csv", ",", "");
   }
 }

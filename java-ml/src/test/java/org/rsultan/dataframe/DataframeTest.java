@@ -213,8 +213,9 @@ public class DataframeTest {
   @Test
   public void must_write_dataframe_to_file() throws IOException {
     var headers = new String[]{"c1", "c2", "c3"};
+    final String property = System.getProperty("java.io.tmpdir");
     String filename =
-        System.getProperty("java.io.tmpdir") + UUID.randomUUID() + ".csv";
+        (property.endsWith("/") ? property : property + "/") + UUID.randomUUID() + ".csv";
 
     Dataframes.create(headers,
         List.of(

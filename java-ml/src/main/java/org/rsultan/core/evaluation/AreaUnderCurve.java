@@ -1,33 +1,41 @@
-package org.rsultan.core.ensemble.isolationforest.evaluation;
+package org.rsultan.core.evaluation;
 
+import static java.util.Comparator.comparingDouble;
 import static java.util.stream.IntStream.range;
 
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.nd4j.common.primitives.Quad;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.indexing.BooleanIndexing;
 import org.nd4j.linalg.indexing.conditions.Conditions;
 import org.rsultan.core.Evaluator;
-import org.rsultan.core.ensemble.isolationforest.IsolationForest;
+import org.rsultan.core.RawTrainable;
 import org.rsultan.dataframe.Dataframe;
 import org.rsultan.dataframe.Dataframes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
+public class AreaUnderCurve<T extends RawTrainable<T>> implements Evaluator<AreaUnderCurve<T>, T> {
 
-public class TPRThresholdEvaluator implements Evaluator<Double, IsolationForest> {
-
-  private static final Logger LOG = LoggerFactory.getLogger(TPRThresholdEvaluator.class);
-  private double desiredTPR = 0.9;
+  private static final Logger LOG = LoggerFactory.getLogger(AreaUnderCurve.class);
   private double learningRate = 0.01;
-  private double TPR = 0;
-  private double FPR = 0;
-
   private double trainTestThreshold = 0.5D;
   private int responseVariableIndex = -1;
   private Dataframe testDataframe;
 
-  public Double evaluate(IsolationForest trainable, Dataframe dataframe) {
+  private Map<Double, ConfusionMatrix> rocData;
+  private double f1Score;
+  private double phiCoef;
+
+  public AreaUnderCurve<T> evaluate(T trainable, Dataframe dataframe) {
+    rocData = new TreeMap<>();
     var dfSplit = dataframe.copy().shuffle().trainTest(trainTestThreshold);
 
     final INDArray train = dfSplit[0];
@@ -39,8 +47,7 @@ public class TPRThresholdEvaluator implements Evaluator<Double, IsolationForest>
 
     final int[] predictorIndices = range(0, train.columns()).filter(i -> i != responseVariableIndex)
         .toArray();
-    var trained = trainable.setUseAnomalyScoresOnly(true)
-        .train(train.getColumns(predictorIndices));
+    var trained = trainable.train(train.getColumns(predictorIndices));
 
     var testDf = test.getColumns(predictorIndices);
     var responses = test.getColumn(responseVariableIndex);
@@ -48,9 +55,8 @@ public class TPRThresholdEvaluator implements Evaluator<Double, IsolationForest>
     var predict = trained.predict(testDf.getColumns(predictorIndices));
 
     double threshold = 1;
-    while (threshold > 0 && TPR <= desiredTPR) {
+    while (threshold > 0) {
       LOG.info("Evaluating isolation forest with threshold {}", threshold);
-      threshold -= learningRate;
       var scores = Nd4j.create(predict.toDoubleVector());
       BooleanIndexing.replaceWhere(scores, 1.0, Conditions.greaterThanOrEqual(threshold));
       BooleanIndexing.replaceWhere(scores, 0.0, Conditions.lessThan(threshold));
@@ -64,46 +70,57 @@ public class TPRThresholdEvaluator implements Evaluator<Double, IsolationForest>
         falsePositives += response == 0L && prediction == 1L ? 1L : 0L;
         falseNegative += response == 1L && prediction == 0L ? 1L : 0L;
       }
-      TPR = truePositives / (truePositives + falseNegative);
-      TPR = Double.isNaN(TPR) ? 0 : TPR;
-
-      FPR = falsePositives / (falsePositives + trueNegatives);
-      FPR = Double.isNaN(FPR) ? 0L : FPR;
+      var cm = new ConfusionMatrix(truePositives, trueNegatives, falsePositives, falseNegative);
+      rocData.put(threshold, cm);
+      final double lastF1Score = cm.f1Score();
+      final double lastPhiCoef = cm.phiCoefficient();
+      if(f1Score <= lastF1Score){
+        f1Score = lastF1Score;
+        phiCoef = lastPhiCoef;
+        LOG.info("F1 score for threshold: {} --> {}", threshold, lastF1Score);
+        LOG.info("Phi coefficient for threshold: {} --> {}", threshold, lastPhiCoef);
+      }
+      threshold -= learningRate;
     }
 
-    if (threshold < 0) {
-      throw new IllegalArgumentException("Cannot have desired TPR");
-    }
-
-    return threshold;
-  }
-
-  public TPRThresholdEvaluator setDesiredTPR(double desiredTPR) {
-    this.desiredTPR = desiredTPR;
     return this;
   }
 
-  public TPRThresholdEvaluator setLearningRate(double learningRate) {
+  public double getAUC() {
+    var sortedDots = rocData.values().stream()
+        .map(cf -> Map.entry(cf.fallout(), cf.recall()))
+        .sorted(Entry.comparingByKey()).toList();
+
+    double auc = 0D;
+    for (int i = 0; i < sortedDots.size() - 1; i++) {
+      var e1 = sortedDots.get(i);
+      var e2 = sortedDots.get(i + 1);
+
+      double base = e2.getKey() - e1.getKey();
+      double diffHeight = e2.getValue() - e1.getValue();
+      double minHeight = diffHeight < 0 ? e2.getValue() : e1.getValue();
+      auc += (minHeight * base) + (diffHeight * base / 2);
+    }
+    return auc;
+  }
+
+  public AreaUnderCurve<T> setLearningRate(double learningRate) {
     this.learningRate = learningRate;
     return this;
   }
 
-  public TPRThresholdEvaluator setResponseVariableIndex(int responseVariableIndex) {
+  public AreaUnderCurve<T> setResponseVariableIndex(int responseVariableIndex) {
     this.responseVariableIndex = responseVariableIndex;
     return this;
   }
 
-  public TPRThresholdEvaluator setTrainTestThreshold(double trainTestThreshold) {
+  public AreaUnderCurve<T> setTrainTestThreshold(double trainTestThreshold) {
     this.trainTestThreshold = trainTestThreshold;
     return this;
   }
 
-  public TPRThresholdEvaluator setTestDataframe(Dataframe testDataframe) {
+  public AreaUnderCurve<T> setTestDataframe(Dataframe testDataframe) {
     this.testDataframe = testDataframe;
     return this;
-  }
-
-  public void showMetrics() {
-    Dataframes.create(new String[]{"TPR", "FPR"}, List.of(List.of(TPR, FPR))).show(10);
   }
 }

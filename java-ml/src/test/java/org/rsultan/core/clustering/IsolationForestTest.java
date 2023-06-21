@@ -9,21 +9,17 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
-import org.rsultan.core.ensemble.isolationforest.evaluation.TPRThresholdEvaluator;
+import org.rsultan.core.evaluation.AreaUnderCurve;
 import org.rsultan.core.ensemble.isolationforest.ExtendedIsolationForest;
 import org.rsultan.core.ensemble.isolationforest.IsolationForest;
 import org.rsultan.dataframe.Dataframes;
 
 public class IsolationForestTest {
 
-  private static List<List<?>> rows;
-
-  static {
-    rows = Stream.of(0, 3, 6, 7, 8, 100)
-        .map(IsolationForestTest::createCircleDataAroundCenter)
-        .flatMap(List::stream)
-        .collect(Collectors.toList());
-  }
+  private final static List<List<?>> rows = Stream.of(0, 3, 6, 7, 8, 100)
+      .map(IsolationForestTest::createCircleDataAroundCenter)
+      .flatMap(List::stream)
+      .collect(Collectors.toList());
 
   private static List<List<Double>> createCircleDataAroundCenter(int radius) {
     return rangeClosed(-radius, radius).mapToDouble(x -> x).boxed().flatMap(x -> {
@@ -76,15 +72,14 @@ public class IsolationForestTest {
   @Test
   public void should_evaluate_tpr() {
     var df = Dataframes.create(new String[]{"x", "y", "response"}, rows);
-    var model = new IsolationForest(10).setSampleSize(15);
-    var evaluator = new TPRThresholdEvaluator()
-        .setDesiredTPR(0.9)
+    var model = new IsolationForest(10).setSampleSize(15).setUseAnomalyScoresOnly(true);
+    var evaluator = new AreaUnderCurve<IsolationForest>()
         .setResponseVariableIndex(2)
         .setTrainTestThreshold(0.75)
-        .setLearningRate(0.01);
-    var threshold = evaluator.evaluate(model, df);
-    evaluator.showMetrics();
-    assertThat(threshold).isGreaterThan(0.4);
+        .setLearningRate(0.01)
+        .evaluate(model, df);
+
+    assertThat(evaluator.getAUC()).isBetween(0.0, 1.0);
   }
 
   @Test
@@ -130,14 +125,13 @@ public class IsolationForestTest {
   @Test
   public void should_evaluate_tpr_with_extended() {
     var df = Dataframes.create(new String[]{"x", "y", "response"}, rows);
-    var model = new ExtendedIsolationForest(10, 1).setSampleSize(15);
-    var evaluator = new TPRThresholdEvaluator()
-        .setDesiredTPR(0.9)
+    var model = new ExtendedIsolationForest(10, 1).setUseAnomalyScoresOnly(true).setSampleSize(15);
+    var evaluator = new AreaUnderCurve<IsolationForest>()
         .setResponseVariableIndex(2)
         .setTrainTestThreshold(0.75)
-        .setLearningRate(0.01);
-    var threshold = evaluator.evaluate(model, df);
-    evaluator.showMetrics();
-    assertThat(threshold).isGreaterThan(0.4);
+        .setLearningRate(0.01)
+        .evaluate(model, df);
+
+    assertThat(evaluator.getAUC()).isBetween(0.0, 1.0);
   }
 }

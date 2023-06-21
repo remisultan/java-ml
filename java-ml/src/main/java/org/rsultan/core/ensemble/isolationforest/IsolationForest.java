@@ -99,7 +99,7 @@ public class IsolationForest implements Trainable<IsolationForest>, RawTrainable
       replaceWhere(anomalyScores, 1.0, greaterThanOrEqual(anomalyThreshold));
       replaceWhere(anomalyScores, 0.0, lessThan(anomalyThreshold));
     }
-    return anomalyScores;
+    return anomalyScores.transpose();
   }
 
   @Override

@@ -2,7 +2,8 @@ package org.rsultan.example;
 
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.factory.Nd4j;
-import org.rsultan.core.ensemble.isolationforest.evaluation.TPRThresholdEvaluator;
+import org.rsultan.core.ensemble.isolationforest.IsolationForest;
+import org.rsultan.core.evaluation.AreaUnderCurve;
 import org.rsultan.core.ensemble.isolationforest.ExtendedIsolationForest;
 import org.rsultan.dataframe.Dataframes;
 
@@ -30,13 +31,11 @@ public class ExtendedIsolationForestExample {
     var testDf = Dataframes.csv(args[1], ",", "\"", true);
 
     var model = new ExtendedIsolationForest(200, 2);
-    var evaluator = new TPRThresholdEvaluator()
-        .setDesiredTPR(0.7)
+    var evaluator = new AreaUnderCurve<IsolationForest>()
         .setTrainTestThreshold(0.7)
         .setTestDataframe(testDf)
-        .setLearningRate(0.1);
-    Double threshold = evaluator.evaluate(model, df);
-    System.out.println("threshold = " + threshold);
-    evaluator.showMetrics();
+        .setLearningRate(0.01);
+    evaluator.evaluate(model, df);
+    System.out.println(evaluator.getAUC());
   }
 }
